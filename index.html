@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#EC5A45">
+<meta name="description" content="נופש סמואל — לו״ז, השתבצויות, משחקים וקיר שיתוף למשפחה">
+<title>נופש סמואל · איזה יום היה לי סמואל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<script src="utils.js"></script>
+</head>
+<body>
+
+<!-- ── מסך טעינה ─────────────────────────────────────────── -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-sun"></div>
+  <div class="loading-brand">נופש סמואל</div>
+  <div class="loading-progress" id="loadingProgress">טוען...</div>
+</div>
+
+<!-- ── קונפטי ────────────────────────────────────────────── -->
+<canvas id="confetti"></canvas>
+
+<!-- ── אפליקציה ──────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- כותרת -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="brand">
+        <div class="brand-mark">🌅</div>
+        <div class="brand-text">
+          <div class="brand-title">נופש סמואל</div>
+          <div class="brand-sub" id="brandSub">איזה יום היה לי סמואל</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="מצב תצוגה" aria-label="החלפת מצב תצוגה">🌙</button>
+        <button class="profile-chip" id="profileChip" onclick="Profile.open()" aria-label="הפרופיל שלי">
+          <span class="avatar" id="chipAvatar">🙂</span>
+          <span>
+            <span class="pc-name" id="chipName">אורח/ת</span>
+            <span class="pc-points" id="chipPoints" style="display:none;">⭐ <span id="chipPointsNum">0</span></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ניווט עליון (דסקטופ) -->
+  <nav class="nav" aria-label="ניווט ראשי">
+    <div class="nav-inner" id="topNav"></div>
+  </nav>
+
+  <!-- תוכן -->
+  <main>
+    <div class="wrap">
+
+      <!-- ═══ בית ═══ -->
+      <section class="view active" id="view-home" data-view="home">
+        <div class="hero">
+          <div class="hero-scene">
+            <div class="hero-sky"></div>
+            <div class="hero-sun"></div>
+            <div class="hero-birds">˘ ˘ ˘</div>
+            <svg class="hero-hill far" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true"><path fill="currentColor" d="M0,120 C200,60 380,150 600,110 C820,70 1000,150 1200,100 L1200,200 L0,200 Z"/></svg>
+            <svg class="hero-hill mid" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true"><path fill="currentColor" d="M0,150 C260,90 420,170 680,130 C900,96 1040,168 1200,130 L1200,200 L0,200 Z"/></svg>
+            <svg class="hero-hill near" viewBox="0 0 1200 160" preserveAspectRatio="none" aria-hidden="true"><path fill="currentColor" d="M0,120 C180,150 340,90 520,120 C760,160 900,100 1200,140 L1200,160 L0,160 Z"/></svg>
+          </div>
+          <div class="hero-content">
+            <span class="hero-badge">📮 <span id="heroLocation">אבן מנחם</span> · קיץ <span id="heroYear">2026</span></span>
+            <h1 class="hero-title">נופש סמואל</h1>
+            <div><span class="hero-slogan">איזה יום היה לי סמואל</span></div>
+            <div class="hero-cta">
+              <a class="btn btn-primary" id="wazeBtn" href="#" target="_blank" rel="noopener">🧭 ניווט בוויז</a>
+              <button class="btn btn-secondary" onclick="App.go('schedule')">🗓️ ללו״ז</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ספירה לאחור -->
+        <div class="card mt-md" id="countdownCard">
+          <div class="countdown-title" id="countdownTitle">הספירה לאחור מתחילה...</div>
+          <div class="countdown-stamp">
+            <div class="countdown-grid" id="countdownGrid">
+              <div class="cd-cell"><span class="cd-num" id="cdDays">–</span><span class="cd-label">ימים</span></div>
+              <div class="cd-cell"><span class="cd-num" id="cdHours">–</span><span class="cd-label">שעות</span></div>
+              <div class="cd-cell"><span class="cd-num" id="cdMin">–</span><span class="cd-label">דקות</span></div>
+              <div class="cd-cell"><span class="cd-num" id="cdSec">–</span><span class="cd-label">שניות</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- סטטוס מהיר -->
+        <div class="quick-cards mt-md" id="quickCards"></div>
+
+        <!-- מיקום -->
+        <div class="card mt-md" id="locationCard">
+          <div class="row between wrap-gap">
+            <div>
+              <div class="eyebrow">איפה נפגשים</div>
+              <h3 style="font-family:var(--font-display);font-size:1.5rem;" id="locName">אבן מנחם</h3>
+              <p class="muted" id="locNote">מושב בגליל העליון</p>
+            </div>
+            <div class="row wrap-gap">
+              <a class="btn btn-pine btn-sm" id="wazeBtn2" href="#" target="_blank" rel="noopener">🧭 Waze</a>
+              <a class="btn btn-secondary btn-sm" id="mapsBtn" href="#" target="_blank" rel="noopener">🗺️ Maps</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ לו״ז ═══ -->
+      <section class="view" id="view-schedule" data-view="schedule">
+        <div class="section-head">
+          <div class="eyebrow">מה קורה ומתי</div>
+          <h2 class="section-title">לוח הזמנים</h2>
+          <p class="section-desc">כל היום שלנו במושב — ארוחות, פעילויות והפתעות. גוללים למטה לפי ימים.</p>
+        </div>
+        <div id="scheduleList"><div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div></div>
+      </section>
+
+      <!-- ═══ השתבצויות ═══ -->
+      <section class="view" id="view-assign" data-view="assign">
+        <div class="section-head">
+          <div class="eyebrow">מי אחראי על מה</div>
+          <h2 class="section-title">השתבצויות</h2>
+          <p class="section-desc">משבצים את עצמכם למשימות — כמו הסקר בקבוצה, רק שכולם רואים בזמן אמת מה עוד חסר.</p>
+        </div>
+        <div class="subtabs" id="assignTabs"></div>
+        <div id="assignList"></div>
+      </section>
+
+      <!-- ═══ מה להביא ═══ -->
+      <section class="view" id="view-packing" data-view="packing">
+        <div class="section-head">
+          <div class="eyebrow">שלא נשכח כלום</div>
+          <h2 class="section-title">מה להביא</h2>
+          <p class="section-desc">רשימת ציוד. הסימונים נשמרים אצלכם על המכשיר — כל אחד והצ׳קליסט שלו.</p>
+        </div>
+        <div id="packingList"></div>
+      </section>
+
+      <!-- ═══ משחקים ═══ -->
+      <section class="view" id="view-games" data-view="games">
+        <div class="section-head">
+          <div class="eyebrow">קצת תחרותיות משפחתית</div>
+          <h2 class="section-title">משחקים ונקודות</h2>
+          <p class="section-desc">משחקים, צוברים נקודות ומטפסים בטבלת המובילים של המשפחה.</p>
+        </div>
+        <div id="gamesHome"></div>
+      </section>
+
+      <!-- ═══ קיר ═══ -->
+      <section class="view" id="view-wall" data-view="wall">
+        <div class="section-head">
+          <div class="eyebrow">משתפים ומתעדים</div>
+          <h2 class="section-title">קיר השיתוף</h2>
+          <p class="section-desc">הודעות, טיפים, קישורים ותמונות (בהדבקת קישור). מה שכולם רואים.</p>
+        </div>
+        <div class="card wall-composer" id="wallComposer"></div>
+        <div class="wall-grid" id="wallFeed"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ניווט תחתון (מובייל) -->
+  <nav class="bottom-nav" id="bottomNav" aria-label="ניווט"></nav>
+</div>
+
+<!-- ── מודאל כללי (פרופיל / משחק) ─────────────────────────── -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalBox" role="dialog" aria-modal="true"></div>
+</div>
+
+<script src="app.js"></script>
+<script src="games.js"></script>
+</body>
+</html>

@@ -1,0 +1,729 @@
+/* ============================================================
+   נופש סמואל — מערכת עיצוב
+   כיוון: "גלויית קיץ מהגליל" · שקיעה · אורנים · חול חמים
+   Light = יום/גלויה · Dark = ערב/מדורה · RTL עברית
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Suez+One&family=Heebo:wght@300;400;500;600;700;800;900&family=Fredoka:wght@400;500;600;700&display=swap');
+
+/* ── טוקנים — Light (ברירת מחדל, "יום/נייר גלויה") ────────── */
+:root {
+  --bg-base:      #F3E3C3;
+  --bg-surface:   #FFFBF1;
+  --bg-elevated:  #FBF1DC;
+  --paper-line:   rgba(30, 58, 52, 0.06);
+
+  /* אלמוגי-שקיעה — האקצנט הראשי */
+  --accent:        #EC5A45;
+  --accent-bright: #FF6E57;
+  --accent-dim:    #CE3F2C;
+  --accent-glow:   rgba(236, 90, 69, 0.16);
+  --accent-glow-lg:rgba(236, 90, 69, 0.34);
+
+  /* זהב — תגמולים, נקודות, הדגשות */
+  --gold:        #EE9F1E;
+  --gold-bright: #FFBB47;
+  --gold-glow:   rgba(238, 159, 30, 0.22);
+
+  /* אורן/טורקיז גלילי — עוגן קריר */
+  --pine:        #147A6B;
+  --pine-bright: #1AA48F;
+  --pine-dim:    #0E5A4F;
+  --sky:         #6FB4BE;
+
+  --glass-bg:     rgba(30, 58, 52, 0.035);
+  --glass-border: rgba(30, 58, 52, 0.11);
+  --glass-hover:  rgba(30, 58, 52, 0.06);
+
+  --text-primary:   #1E3A34;
+  --text-secondary: #56685F;
+  --text-muted:     #9A9484;
+  --on-accent:      #FFF7EC;
+
+  --success: #14926B;  --success-bg: rgba(20, 146, 107, 0.14);
+  --danger:  #D93B32;  --danger-bg:  rgba(217, 59, 50, 0.13);
+  --warning: #EE9F1E;  --warning-bg: rgba(238, 159, 30, 0.15);
+  --info:    #2E86AB;  --info-bg:    rgba(46, 134, 171, 0.13);
+
+  /* שכבות ה-hero (סצנת שקיעה) */
+  --sky-top:    #FBD9A0;
+  --sky-mid:    #F7A672;
+  --sky-low:    #F07E63;
+  --sun:        #FFD65A;
+  --hill-far:   #3C8F86;
+  --hill-mid:   #1E7568;
+  --hill-near:  #0E5348;
+
+  --radius-xl:   26px;
+  --radius-lg:   16px;
+  --radius-md:   11px;
+  --radius-sm:   7px;
+  --radius-pill: 999px;
+
+  --shadow-sm:  0 2px 10px rgba(72, 44, 20, 0.10);
+  --shadow-md:  0 8px 26px rgba(72, 44, 20, 0.14);
+  --shadow-lg:  0 18px 54px rgba(72, 44, 20, 0.20);
+  --shadow-card:0 10px 30px rgba(72, 44, 20, 0.13);
+
+  --font-display: 'Suez One', 'Heebo', serif;
+  --font-body:    'Heebo', 'Segoe UI', sans-serif;
+  --font-fun:     'Fredoka', 'Heebo', sans-serif;
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast:   all 0.15s var(--ease-smooth);
+  --t-med:    all 0.24s var(--ease-smooth);
+  --t-spring: all 0.34s var(--ease-spring);
+
+  --maxw: 1080px;
+}
+
+/* ── טוקנים — Dark ("ערב/מדורה בגליל") ────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-base:     #0E1F1C;
+    --bg-surface:  #16302A;
+    --bg-elevated: #1E3A33;
+    --paper-line:  rgba(246, 236, 214, 0.05);
+
+    --accent:        #FF6E57;
+    --accent-bright: #FF8A70;
+    --accent-dim:    #E24E38;
+    --accent-glow:   rgba(255, 110, 87, 0.18);
+    --accent-glow-lg:rgba(255, 110, 87, 0.4);
+
+    --gold:        #FFBB47;
+    --gold-bright: #FFD37A;
+    --gold-glow:   rgba(255, 187, 71, 0.26);
+
+    --pine:        #2AA48D;
+    --pine-bright: #3FC4AA;
+    --pine-dim:    #17705F;
+    --sky:         #82C3CD;
+
+    --glass-bg:     rgba(246, 236, 214, 0.04);
+    --glass-border: rgba(246, 236, 214, 0.11);
+    --glass-hover:  rgba(246, 236, 214, 0.08);
+
+    --text-primary:   #F6ECD6;
+    --text-secondary: #AEC2B6;
+    --text-muted:     #6E8378;
+    --on-accent:      #21100B;
+
+    --success: #34C08D;  --success-bg: rgba(52, 192, 141, 0.16);
+    --danger:  #FF6B60;  --danger-bg:  rgba(255, 107, 96, 0.15);
+    --warning: #FFBB47;  --warning-bg: rgba(255, 187, 71, 0.16);
+    --info:    #66B9D6;  --info-bg:    rgba(102, 185, 214, 0.15);
+
+    --sky-top:  #23423C;
+    --sky-mid:  #3A4A47;
+    --sky-low:  #5E4740;
+    --sun:      #FFCF5E;
+    --hill-far: #1B4A43;
+    --hill-mid: #123A34;
+    --hill-near:#0A2823;
+
+    --shadow-sm:  0 2px 10px rgba(0,0,0,0.4);
+    --shadow-md:  0 8px 26px rgba(0,0,0,0.5);
+    --shadow-lg:  0 18px 54px rgba(0,0,0,0.6);
+    --shadow-card:0 10px 30px rgba(0,0,0,0.45);
+  }
+}
+
+/* דריסה מפורשת ע"י כפתור הטוגל (מנצח את media query בשני הכיוונים) */
+:root[data-theme="dark"] {
+  --bg-base:     #0E1F1C;
+  --bg-surface:  #16302A;
+  --bg-elevated: #1E3A33;
+  --paper-line:  rgba(246, 236, 214, 0.05);
+  --accent:        #FF6E57;
+  --accent-bright: #FF8A70;
+  --accent-dim:    #E24E38;
+  --accent-glow:   rgba(255, 110, 87, 0.18);
+  --accent-glow-lg:rgba(255, 110, 87, 0.4);
+  --gold:        #FFBB47;
+  --gold-bright: #FFD37A;
+  --gold-glow:   rgba(255, 187, 71, 0.26);
+  --pine:        #2AA48D;
+  --pine-bright: #3FC4AA;
+  --pine-dim:    #17705F;
+  --sky:         #82C3CD;
+  --glass-bg:     rgba(246, 236, 214, 0.04);
+  --glass-border: rgba(246, 236, 214, 0.11);
+  --glass-hover:  rgba(246, 236, 214, 0.08);
+  --text-primary:   #F6ECD6;
+  --text-secondary: #AEC2B6;
+  --text-muted:     #6E8378;
+  --on-accent:      #21100B;
+  --success: #34C08D;  --success-bg: rgba(52, 192, 141, 0.16);
+  --danger:  #FF6B60;  --danger-bg:  rgba(255, 107, 96, 0.15);
+  --warning: #FFBB47;  --warning-bg: rgba(255, 187, 71, 0.16);
+  --info:    #66B9D6;  --info-bg:    rgba(102, 185, 214, 0.15);
+  --sky-top:  #23423C; --sky-mid:  #3A4A47; --sky-low:  #5E4740;
+  --sun:      #FFCF5E;
+  --hill-far: #1B4A43; --hill-mid: #123A34; --hill-near:#0A2823;
+  --shadow-sm:  0 2px 10px rgba(0,0,0,0.4);
+  --shadow-md:  0 8px 26px rgba(0,0,0,0.5);
+  --shadow-lg:  0 18px 54px rgba(0,0,0,0.6);
+  --shadow-card:0 10px 30px rgba(0,0,0,0.45);
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"]  { color-scheme: dark; }
+
+/* ── בסיס ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { direction: rtl; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: background 0.4s var(--ease-smooth), color 0.4s var(--ease-smooth);
+}
+/* מרקם נייר עדין ברקע */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(circle at 20% 12%, var(--accent-glow) 0%, transparent 42%),
+    radial-gradient(circle at 85% 8%, var(--gold-glow) 0%, transparent 40%);
+  opacity: 0.9;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-bright); }
+button { cursor: pointer; font-family: inherit; border: none; outline: none; background: none; color: inherit; }
+img { max-width: 100%; display: block; }
+h1,h2,h3 { text-wrap: balance; line-height: 1.12; }
+::selection { background: var(--accent); color: var(--on-accent); }
+:focus-visible { outline: 3px solid var(--pine); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+/* ── מסך טעינה ────────────────────────────────────────────── */
+.loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 20px; background: var(--bg-base);
+  transition: opacity 0.5s var(--ease-smooth), visibility 0.5s var(--ease-smooth);
+}
+.loading-screen.hidden { opacity: 0; visibility: hidden; }
+.loading-sun {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, var(--gold-bright), var(--accent));
+  box-shadow: 0 0 0 0 var(--accent-glow-lg);
+  animation: sunPulse 1.5s var(--ease-smooth) infinite;
+  position: relative;
+}
+.loading-sun::after {
+  content: ''; position: absolute; inset: -14px; border-radius: 50%;
+  border: 3px dashed var(--accent); opacity: .5;
+  animation: spin 3.5s linear infinite;
+}
+@keyframes sunPulse {
+  0%,100% { transform: scale(1);   box-shadow: 0 0 0 0 var(--accent-glow-lg); }
+  50%     { transform: scale(1.08);box-shadow: 0 0 0 18px transparent; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-progress { color: var(--text-secondary); font-size: 0.95rem; font-weight: 600; }
+.loading-brand { font-family: var(--font-display); font-size: 1.5rem; color: var(--accent); }
+
+/* ── מעטפת אפליקציה ───────────────────────────────────────── */
+#app {
+  opacity: 0; transition: opacity 0.5s var(--ease-smooth);
+  position: relative; z-index: 1;
+  min-height: 100vh; display: flex; flex-direction: column;
+  padding-bottom: 90px; /* מקום לניווט תחתון במובייל */
+}
+#app.visible { opacity: 1; }
+.wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 18px; }
+
+/* ── כותרת עליונה ─────────────────────────────────────────── */
+.app-header {
+  position: sticky; top: 0; z-index: 60;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--glass-border);
+}
+.app-header-inner {
+  max-width: var(--maxw); margin: 0 auto; padding: 11px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.brand-mark {
+  width: 42px; height: 42px; flex: none; border-radius: 13px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--accent));
+  display: grid; place-items: center; font-size: 1.3rem;
+  box-shadow: var(--shadow-sm); transform: rotate(-6deg);
+  border: 2px solid var(--bg-surface);
+}
+.brand-text { min-width: 0; }
+.brand-title {
+  font-family: var(--font-display); font-size: 1.28rem; line-height: 1;
+  color: var(--accent); letter-spacing: -0.5px;
+}
+.brand-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
+
+.header-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: var(--radius-pill);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  display: grid; place-items: center; font-size: 1.05rem; transition: var(--t-fast);
+}
+.icon-btn:hover { background: var(--glass-hover); transform: translateY(-1px); }
+
+/* צ'יפ פרופיל */
+.profile-chip {
+  display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 6px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill); transition: var(--t-fast);
+}
+.profile-chip:hover { background: var(--glass-hover); }
+.profile-chip .avatar { width: 30px; height: 30px; font-size: 1rem; }
+.profile-chip .pc-name { font-weight: 700; font-size: 0.86rem; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-chip .pc-points {
+  font-family: var(--font-fun); font-weight: 600; font-size: 0.8rem;
+  color: var(--gold); display: inline-flex; align-items: center; gap: 3px;
+}
+
+.avatar {
+  width: 38px; height: 38px; flex: none; border-radius: 50%;
+  display: grid; place-items: center; font-size: 1.15rem;
+  background: var(--bg-elevated); border: 2px solid var(--glass-border);
+}
+
+/* ── ניווט (גלולות נגללות) ────────────────────────────────── */
+.nav {
+  position: sticky; top: 65px; z-index: 55;
+  background: color-mix(in srgb, var(--bg-base) 82%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--paper-line);
+}
+.nav-inner {
+  max-width: var(--maxw); margin: 0 auto; padding: 10px 12px;
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+}
+.nav-inner::-webkit-scrollbar { display: none; }
+.nav-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 15px; border-radius: var(--radius-pill);
+  font-weight: 700; font-size: 0.9rem; color: var(--text-secondary);
+  border: 1px solid transparent; transition: var(--t-med); white-space: nowrap;
+}
+.nav-btn .ic { font-size: 1.05rem; }
+.nav-btn:hover { color: var(--text-primary); background: var(--glass-bg); }
+.nav-btn.active {
+  color: var(--on-accent);
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent-dim));
+  box-shadow: 0 5px 16px var(--accent-glow-lg);
+}
+
+/* ניווט תחתון קבוע (מובייל) */
+.bottom-nav {
+  position: fixed; bottom: 0; inset-inline: 0; z-index: 70;
+  display: none; justify-content: space-around; align-items: stretch;
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--glass-border);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+.bn-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 2px; color: var(--text-muted); font-size: 0.62rem; font-weight: 700;
+  transition: var(--t-fast); border-radius: var(--radius-md);
+}
+.bn-btn .ic { font-size: 1.28rem; }
+.bn-btn.active { color: var(--accent); }
+.bn-btn.active .ic { transform: translateY(-2px); }
+
+/* ── מבנה מסך/סקשן ────────────────────────────────────────── */
+main { flex: 1; }
+.view { display: none; padding: 22px 0 40px; animation: viewIn 0.4s var(--ease-smooth); }
+.view.active { display: block; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.section-head { margin-bottom: 16px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.74rem; font-weight: 800; letter-spacing: 2px;
+  color: var(--pine); text-transform: uppercase; margin-bottom: 8px;
+}
+.eyebrow::before { content: ''; width: 22px; height: 2px; background: var(--pine); border-radius: 2px; }
+.section-title { font-family: var(--font-display); font-size: clamp(1.7rem, 5vw, 2.4rem); color: var(--text-primary); }
+.section-desc { color: var(--text-secondary); margin-top: 6px; max-width: 60ch; }
+
+/* ── כרטיסים ──────────────────────────────────────────────── */
+.card {
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-card);
+}
+.grid { display: grid; gap: 14px; }
+.grid-2 { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+
+/* ── HERO ─────────────────────────────────────────────────── */
+.hero {
+  position: relative; border-radius: var(--radius-xl); overflow: hidden;
+  box-shadow: var(--shadow-lg); border: 6px solid var(--bg-surface);
+  min-height: 380px; display: flex; align-items: flex-end;
+  isolation: isolate;
+}
+.hero-scene { position: absolute; inset: 0; z-index: -2; }
+.hero-sky {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 48%, var(--sky-low) 100%);
+}
+.hero-sun {
+  position: absolute; top: 16%; left: 50%; transform: translateX(-50%);
+  width: 118px; height: 118px; border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, #FFF3C4, var(--sun) 62%, var(--accent) 130%);
+  box-shadow: 0 0 60px 18px rgba(255, 200, 90, 0.55);
+  animation: floatSun 7s var(--ease-smooth) infinite;
+}
+@keyframes floatSun { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-10px); } }
+.hero-hill { position: absolute; inset-inline: 0; bottom: 0; width: 100%; display: block; }
+.hero-hill.far  { z-index: -1; color: var(--hill-far); bottom: 78px; opacity: .9; }
+.hero-hill.mid  { z-index: -1; color: var(--hill-mid); bottom: 40px; }
+.hero-hill.near { z-index: 0;  color: var(--hill-near); bottom: 0; }
+.hero-birds { position: absolute; top: 22%; right: 16%; z-index: -1; color: rgba(30,58,52,.5); font-size: 1rem; letter-spacing: 4px; }
+
+.hero-content {
+  position: relative; z-index: 2; width: 100%;
+  padding: 26px 24px 24px;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--hill-near) 78%, transparent) 8%, transparent 100%);
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px;
+  background: rgba(255,255,255,0.9); color: var(--accent-dim);
+  padding: 6px 13px; border-radius: var(--radius-pill);
+  font-weight: 800; font-size: 0.78rem; box-shadow: var(--shadow-sm);
+}
+.hero-title {
+  font-family: var(--font-display); color: #FFF7EC;
+  font-size: clamp(2.3rem, 9vw, 4rem); line-height: 0.95;
+  text-shadow: 0 3px 18px rgba(0,0,0,0.35);
+}
+.hero-slogan {
+  margin-top: 10px; display: inline-block;
+  font-family: var(--font-display); font-size: clamp(1rem, 3.6vw, 1.5rem);
+  color: var(--hill-near); background: var(--gold-bright);
+  padding: 6px 16px; border-radius: var(--radius-pill);
+  transform: rotate(-2deg); box-shadow: var(--shadow-md);
+}
+.hero-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+
+/* חותמת ספירה-לאחור (סגנון בול/חותמת דואר) */
+.countdown-stamp {
+  position: relative; background: var(--bg-surface);
+  border: 2px dashed var(--accent); border-radius: var(--radius-md);
+  padding: 14px 10px; text-align: center;
+}
+.countdown-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cd-cell { display: flex; flex-direction: column; align-items: center; }
+.cd-num {
+  font-family: var(--font-fun); font-weight: 700; font-size: clamp(1.5rem, 6vw, 2.3rem);
+  color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums;
+}
+.cd-label { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); margin-top: 4px; }
+.countdown-title { font-weight: 800; color: var(--text-secondary); margin-bottom: 10px; font-size: 0.9rem; }
+.countdown-live { color: var(--pine); font-weight: 800; }
+
+/* פאנל מהיר בבית */
+.quick-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; }
+.quick-card {
+  display: flex; flex-direction: column; gap: 4px; padding: 16px;
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: var(--t-spring);
+  text-align: start;
+}
+.quick-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--accent); }
+.quick-card .qc-ic { font-size: 1.7rem; }
+.quick-card .qc-num { font-family: var(--font-fun); font-weight: 700; font-size: 1.6rem; color: var(--accent); }
+.quick-card .qc-label { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; }
+
+/* ── כפתורים ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 20px; border-radius: var(--radius-md);
+  font-size: 0.95rem; font-weight: 800; transition: var(--t-spring);
+  border: 1.5px solid transparent;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(135deg, var(--accent-bright), var(--accent-dim)); color: var(--on-accent); box-shadow: 0 5px 16px var(--accent-glow); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 26px var(--accent-glow-lg); color: var(--on-accent); }
+.btn-gold { background: linear-gradient(135deg, var(--gold-bright), var(--gold)); color: #3a2606; box-shadow: 0 5px 16px var(--gold-glow); }
+.btn-gold:hover { transform: translateY(-2px); }
+.btn-pine { background: linear-gradient(135deg, var(--pine-bright), var(--pine-dim)); color: #fff; }
+.btn-pine:hover { transform: translateY(-2px); color: #fff; }
+.btn-secondary { background: var(--glass-bg); border-color: var(--glass-border); color: var(--text-primary); }
+.btn-secondary:hover { background: var(--glass-hover); }
+.btn-ghost { background: transparent; color: var(--text-secondary); }
+.btn-ghost:hover { color: var(--accent); background: var(--glass-bg); }
+.btn-danger { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 40%, transparent); color: var(--danger); }
+.btn-block { width: 100%; }
+.btn-sm { padding: 7px 13px; font-size: 0.84rem; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── צ'יפים ותוויות ───────────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: var(--radius-pill);
+  font-size: 0.75rem; font-weight: 700; background: var(--glass-bg);
+  border: 1px solid var(--glass-border); color: var(--text-secondary);
+}
+.chip.pine { color: var(--pine); border-color: color-mix(in srgb, var(--pine) 35%, transparent); background: color-mix(in srgb, var(--pine) 10%, transparent); }
+.chip.gold { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 40%, transparent); background: var(--warning-bg); }
+.chip.coral{ color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-glow); }
+.chip.done { color: var(--success); border-color: color-mix(in srgb, var(--success) 40%, transparent); background: var(--success-bg); }
+
+/* ── פסי לו"ז (timeline) ──────────────────────────────────── */
+.day-block { margin-bottom: 22px; }
+.day-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  position: sticky; top: 118px; z-index: 20;
+  background: var(--bg-base); padding: 6px 0;
+}
+.day-badge {
+  font-family: var(--font-display); font-size: 1.15rem; color: var(--on-accent);
+  background: linear-gradient(135deg, var(--pine-bright), var(--pine-dim));
+  padding: 8px 16px; border-radius: var(--radius-pill); flex: none;
+}
+.day-line { flex: 1; height: 2px; background: var(--paper-line); }
+.timeline { position: relative; padding-inline-start: 24px; }
+.timeline::before {
+  content: ''; position: absolute; inset-inline-start: 6px; top: 6px; bottom: 6px;
+  width: 2px; background: linear-gradient(var(--accent), var(--gold), var(--pine));
+  border-radius: 2px;
+}
+.tl-item { position: relative; padding: 4px 0 18px; }
+.tl-item::before {
+  content: ''; position: absolute; inset-inline-start: -24px; top: 8px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--bg-surface); border: 3px solid var(--accent);
+}
+.tl-item[data-type="meal"]::before { border-color: var(--gold); }
+.tl-item[data-type="activity"]::before { border-color: var(--pine); }
+.tl-card {
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); padding: 13px 15px; box-shadow: var(--shadow-sm);
+}
+.tl-time { font-family: var(--font-fun); font-weight: 600; color: var(--accent); font-size: 0.9rem; }
+.tl-title { font-weight: 800; font-size: 1.02rem; margin: 2px 0; }
+.tl-detail { color: var(--text-secondary); font-size: 0.88rem; }
+
+/* ── השתבצויות ────────────────────────────────────────────── */
+.subtabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.subtab {
+  padding: 8px 16px; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.88rem;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary);
+  transition: var(--t-med);
+}
+.subtab.active { background: var(--pine); color: #fff; border-color: var(--pine); }
+
+.assign-item {
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-sm);
+  margin-bottom: 12px; transition: var(--t-med);
+}
+.assign-item.full { border-color: color-mix(in srgb, var(--success) 45%, transparent); }
+.assign-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.assign-title { font-weight: 800; font-size: 1.05rem; }
+.assign-detail { color: var(--text-secondary); font-size: 0.86rem; margin-top: 2px; }
+.assign-count { font-family: var(--font-fun); font-weight: 700; font-size: 1rem; color: var(--pine); flex: none; }
+.assign-count.full { color: var(--success); }
+.progress-track { height: 9px; background: var(--glass-bg); border-radius: var(--radius-pill); overflow: hidden; margin: 12px 0 10px; border: 1px solid var(--paper-line); }
+.progress-fill { height: 100%; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--pine-bright), var(--pine)); transition: width 0.6s var(--ease-spring); }
+.progress-fill.full { background: linear-gradient(90deg, var(--success), var(--pine-bright)); }
+.assign-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.claim-avatars { display: flex; align-items: center; }
+.claim-avatars .avatar { width: 30px; height: 30px; font-size: 0.9rem; margin-inline-start: -8px; border: 2px solid var(--bg-surface); }
+.claim-avatars .avatar:first-child { margin-inline-start: 0; }
+.claim-names { font-size: 0.8rem; color: var(--text-muted); }
+
+/* ── צ'קליסט מה להביא ─────────────────────────────────────── */
+.check-row {
+  display: flex; align-items: center; gap: 12px; padding: 13px 15px;
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); margin-bottom: 9px; transition: var(--t-fast);
+}
+.check-row:hover { border-color: var(--accent); }
+.check-box {
+  width: 26px; height: 26px; flex: none; border-radius: 8px;
+  border: 2px solid var(--glass-border); display: grid; place-items: center;
+  font-size: 0.9rem; color: transparent; transition: var(--t-spring); background: var(--bg-elevated);
+}
+.check-row.checked .check-box { background: var(--success); border-color: var(--success); color: #fff; }
+.check-row.checked .cr-text { text-decoration: line-through; color: var(--text-muted); }
+.cr-text { flex: 1; font-weight: 600; }
+.cr-qty { font-family: var(--font-fun); font-weight: 600; color: var(--accent); font-size: 0.9rem; }
+
+/* ── משחקים ───────────────────────────────────────────────── */
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.game-card {
+  position: relative; overflow: hidden; text-align: start;
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-card);
+  transition: var(--t-spring); cursor: pointer;
+}
+.game-card:hover { transform: translateY(-4px) rotate(-0.6deg); box-shadow: var(--shadow-lg); border-color: var(--accent); }
+.game-ic { font-size: 2.4rem; margin-bottom: 8px; }
+.game-name { font-family: var(--font-display); font-size: 1.3rem; }
+.game-desc { color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 12px; }
+.game-best { font-size: 0.78rem; color: var(--gold); font-weight: 700; }
+
+/* לוח זיכרון */
+.memory-board { display: grid; gap: 8px; margin: 16px auto; max-width: 460px; }
+.mem-card {
+  aspect-ratio: 1; border-radius: var(--radius-md); position: relative;
+  transform-style: preserve-3d; transition: transform 0.4s var(--ease-spring); cursor: pointer;
+}
+.mem-card.flipped, .mem-card.matched { transform: rotateY(180deg); }
+.mem-face {
+  position: absolute; inset: 0; border-radius: var(--radius-md);
+  display: grid; place-items: center; backface-visibility: hidden;
+  font-size: clamp(1.4rem, 7vw, 2.2rem); overflow: hidden;
+}
+.mem-front { background: linear-gradient(140deg, var(--pine-bright), var(--pine-dim)); color: #fff; font-size: 1.6rem; }
+.mem-back { background: var(--bg-elevated); border: 2px solid var(--glass-border); transform: rotateY(180deg); }
+.mem-back img { width: 100%; height: 100%; object-fit: cover; }
+.mem-card.matched .mem-back { border-color: var(--success); box-shadow: 0 0 0 3px var(--success-bg); }
+.game-stats { display: flex; justify-content: center; gap: 22px; margin-bottom: 8px; }
+.game-stat { text-align: center; }
+.game-stat .gs-num { font-family: var(--font-fun); font-weight: 700; font-size: 1.5rem; color: var(--accent); }
+.game-stat .gs-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; }
+
+/* חידון */
+.quiz-progress { display: flex; gap: 5px; margin-bottom: 16px; }
+.quiz-dot { flex: 1; height: 6px; border-radius: 3px; background: var(--glass-bg); }
+.quiz-dot.done { background: var(--pine); }
+.quiz-dot.current { background: var(--accent); }
+.quiz-q { font-family: var(--font-display); font-size: 1.35rem; margin-bottom: 4px; }
+.quiz-cat { font-size: 0.75rem; color: var(--pine); font-weight: 800; letter-spacing: 1px; }
+.quiz-options { display: grid; gap: 10px; margin-top: 16px; }
+.quiz-opt {
+  padding: 14px 16px; border-radius: var(--radius-md); text-align: start; font-weight: 700;
+  background: var(--bg-elevated); border: 2px solid var(--glass-border); transition: var(--t-med);
+}
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); transform: translateX(-3px); }
+.quiz-opt.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+.quiz-opt.wrong { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+/* טבלת מובילים */
+.lb-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 15px;
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); margin-bottom: 8px; transition: var(--t-med);
+}
+.lb-row.me { border-color: var(--accent); background: var(--accent-glow); }
+.lb-rank { font-family: var(--font-fun); font-weight: 700; font-size: 1.2rem; width: 34px; text-align: center; color: var(--text-muted); flex: none; }
+.lb-row.top1 .lb-rank, .lb-row.top2 .lb-rank, .lb-row.top3 .lb-rank { font-size: 1.5rem; }
+.lb-name { flex: 1; font-weight: 800; }
+.lb-fam { font-size: 0.76rem; color: var(--text-muted); font-weight: 600; }
+.lb-points { font-family: var(--font-fun); font-weight: 700; color: var(--gold); font-size: 1.15rem; display: flex; align-items: center; gap: 4px; }
+
+/* ── קיר שיתוף ────────────────────────────────────────────── */
+.wall-composer { margin-bottom: 20px; }
+.wall-grid { columns: 2; column-gap: 14px; }
+.wall-note {
+  break-inside: avoid; margin-bottom: 14px;
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); padding: 15px; box-shadow: var(--shadow-card);
+  transition: var(--t-spring);
+}
+.wall-note:nth-child(3n) { transform: rotate(0.7deg); }
+.wall-note:nth-child(3n+1) { transform: rotate(-0.8deg); }
+.wall-note:hover { transform: rotate(0) translateY(-3px); box-shadow: var(--shadow-md); }
+.wall-note img { border-radius: var(--radius-sm); margin-bottom: 10px; width: 100%; }
+.wall-msg { font-size: 0.96rem; white-space: pre-wrap; word-break: break-word; }
+.wall-foot { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--paper-line); }
+.wall-foot .avatar { width: 28px; height: 28px; font-size: 0.85rem; }
+.wall-author { font-weight: 700; font-size: 0.82rem; }
+.wall-time { font-size: 0.72rem; color: var(--text-muted); margin-inline-start: auto; }
+
+/* ── טפסים ────────────────────────────────────────────────── */
+.form-group { margin-bottom: 15px; }
+.form-label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 12px 14px; background: var(--bg-elevated);
+  border: 1.5px solid var(--glass-border); border-radius: var(--radius-md);
+  color: var(--text-primary); font-family: inherit; font-size: 0.98rem; transition: var(--t-fast);
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.form-textarea { resize: vertical; min-height: 90px; }
+.form-hint { font-size: 0.76rem; color: var(--text-muted); margin-top: 5px; }
+
+/* בורר אווטארים */
+.avatar-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px,1fr)); gap: 8px; max-height: 190px; overflow-y: auto; padding: 4px; }
+.avatar-opt {
+  aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font-size: 1.3rem;
+  background: var(--bg-elevated); border: 2px solid transparent; transition: var(--t-fast);
+}
+.avatar-opt:hover { background: var(--glass-hover); }
+.avatar-opt.selected { border-color: var(--accent); background: var(--accent-glow); transform: scale(1.05); }
+
+/* ── מודאל ────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000; background: rgba(20, 12, 6, 0.62);
+  backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; padding: 18px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--bg-surface); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl); padding: 24px; max-width: 460px; width: 100%;
+  max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg);
+  animation: modalIn 0.3s var(--ease-spring);
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.94) translateY(10px); } to { opacity: 1; transform: none; } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.modal-title { font-family: var(--font-display); font-size: 1.4rem; }
+.modal-close { width: 34px; height: 34px; border-radius: 50%; color: var(--text-muted); font-size: 1.3rem; }
+.modal-close:hover { background: var(--glass-hover); color: var(--text-primary); }
+.modal-footer { display: flex; gap: 10px; margin-top: 22px; }
+
+/* ── טוסט ─────────────────────────────────────────────────── */
+.toast-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; width: max-content; max-width: 90vw; }
+.toast { display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: var(--bg-elevated); border: 1px solid var(--glass-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); opacity: 0; transform: translateY(20px); transition: var(--t-spring); pointer-events: auto; font-weight: 600; }
+.toast-show { opacity: 1; transform: translateY(0); }
+.toast-hide { opacity: 0; transform: translateY(20px); }
+.toast-success { border-color: var(--success); } .toast-success .toast-icon { color: var(--success); }
+.toast-error   { border-color: var(--danger); }  .toast-error .toast-icon { color: var(--danger); }
+.toast-warning { border-color: var(--warning); } .toast-warning .toast-icon { color: var(--warning); }
+.toast-info    { border-color: var(--info); }    .toast-info .toast-icon { color: var(--info); }
+.toast-icon { font-weight: 800; font-size: 1.05rem; }
+
+/* ── מצב ריק ──────────────────────────────────────────────── */
+.empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.empty-ic { font-size: 3rem; margin-bottom: 12px; opacity: 0.7; }
+.empty-title { font-weight: 800; color: var(--text-secondary); margin-bottom: 4px; }
+
+/* ── קונפטי ───────────────────────────────────────────────── */
+#confetti { position: fixed; inset: 0; z-index: 9998; pointer-events: none; }
+
+/* ── כלים ─────────────────────────────────────────────────── */
+.row { display: flex; align-items: center; gap: 10px; }
+.between { justify-content: space-between; }
+.wrap-gap { flex-wrap: wrap; }
+.mt-sm { margin-top: 8px; } .mt-md { margin-top: 16px; } .mt-lg { margin-top: 28px; }
+.mb-md { margin-bottom: 16px; }
+.muted { color: var(--text-muted); }
+.center { text-align: center; }
+.spinner-sm { width: 20px; height: 20px; border: 2.5px solid var(--glass-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+/* ── רספונסיביות ──────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .bottom-nav { display: flex; }
+  .nav { display: none; }
+  .hero { min-height: 340px; border-width: 4px; }
+  .day-header { top: 66px; }
+  .modal { padding: 20px; }
+}
+@media (min-width: 721px) {
+  #app { padding-bottom: 0; }
+}
+@media (max-width: 380px) {
+  .wall-grid { columns: 1; }
+  .countdown-grid { gap: 5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

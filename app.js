@@ -169,7 +169,8 @@ const Schedule = {
     return `<div class="row between wrap-gap mb-md">
       <span class="chip pine">📅 26–28 ביולי · ראשון–שלישי</span>
       <button class="btn btn-primary btn-sm" onclick="Schedule.openAdd()">➕ הוספת אירוע</button>
-    </div>`;
+    </div>
+    <a class="btn btn-gold btn-block mb-md" href="assets/luz-aluma.pdf" target="_blank" rel="noopener">📄 הלו״ז המטריף שאלומה הכינה</a>`;
   },
 
   render() {

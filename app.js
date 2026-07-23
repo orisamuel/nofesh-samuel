@@ -148,28 +148,103 @@ const App = {
   // ── לו״ז ──
   async loadSchedule() {
     const box = $('scheduleList');
-    if (!CONFIGURED) { box.innerHTML = this.notConfiguredBanner() + emptyState('🗓️', 'הלו״ז יופיע כאן', 'ערכו את גיליון schedule'); return; }
+    if (!CONFIGURED) { box.innerHTML = this.notConfiguredBanner() + Schedule.addBar() + emptyState('🗓️', 'הלו״ז יופיע כאן', 'זמין אחרי חיבור הגיליון'); return; }
+    box.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
     try {
       const res = await apiCall('getSchedule');
-      const items = (res.success && res.schedule) ? res.schedule : [];
-      if (!items.length) { box.innerHTML = emptyState('🗓️', 'הלו״ז עדיין ריק', 'הוסיפו שורות בגיליון schedule'); return; }
-      const byDay = {};
-      items.forEach(i => { (byDay[i.day] = byDay[i.day] || []).push(i); });
-      box.innerHTML = Object.keys(byDay).map(day => `
-        <div class="day-block">
-          <div class="day-header"><span class="day-badge">${esc(day)}</span><span class="day-line"></span></div>
-          <div class="timeline">
-            ${byDay[day].map(i => `
-              <div class="tl-item" data-type="${esc(i.type)}">
-                <div class="tl-card">
-                  ${i.time ? `<div class="tl-time">${esc(i.time)}</div>` : ''}
-                  <div class="tl-title">${typeIcon(i.type)} ${esc(i.title)}</div>
-                  ${i.detail ? `<div class="tl-detail">${esc(i.detail)}</div>` : ''}
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>`).join('');
+      App.state.schedule = (res.success && res.schedule) ? res.schedule : [];
+      Schedule.render();
     } catch (e) { box.innerHTML = emptyState('😕', 'שגיאה בטעינת הלו״ז', e.message); }
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════
+   Schedule — לו״ז שכל אחד יכול לערוך (הוספה/עריכה/מחיקה)
+   ═══════════════════════════════════════════════════════════ */
+const Schedule = {
+  DAYS: ['יום ראשון', 'יום שני', 'יום שלישי'],
+  TYPES: [['activity', '🎪 פעילות'], ['meal', '🍽️ ארוחה'], ['travel', '🚗 נסיעה'], ['other', '📍 אחר']],
+
+  addBar() {
+    return `<div class="row between wrap-gap mb-md">
+      <span class="chip pine">📅 26–28 ביולי · ראשון–שלישי</span>
+      <button class="btn btn-primary btn-sm" onclick="Schedule.openAdd()">➕ הוספת אירוע</button>
+    </div>`;
+  },
+
+  render() {
+    const box = $('scheduleList');
+    const items = App.state.schedule || [];
+    if (!items.length) { box.innerHTML = this.addBar() + emptyState('🗓️', 'אין עדיין אירועים בלו״ז', 'לחצו "הוספת אירוע" והתחילו!'); return; }
+    const byDay = {};
+    items.forEach(i => { const d = i.day || 'כללי'; (byDay[d] = byDay[d] || []).push(i); });
+    box.innerHTML = this.addBar() + Object.keys(byDay).map(day => `
+      <div class="day-block">
+        <div class="day-header"><span class="day-badge">${esc(day)}</span><span class="day-line"></span>
+          <button class="icon-btn-sm" onclick="Schedule.openAdd('${esc(day)}')" title="הוספה ליום זה">➕</button></div>
+        <div class="timeline">
+          ${byDay[day].map(i => `
+            <div class="tl-item" data-type="${esc(i.type)}">
+              <div class="tl-card">
+                <div class="row between" style="align-items:flex-start; gap:8px;">
+                  <div style="min-width:0;">
+                    ${i.time ? `<div class="tl-time">${esc(fmtTimeCell(i.time))}</div>` : ''}
+                    <div class="tl-title">${typeIcon(i.type)} ${esc(i.title)}</div>
+                    ${i.detail ? `<div class="tl-detail">${esc(i.detail)}</div>` : ''}
+                  </div>
+                  <div class="tl-actions">
+                    <button class="icon-btn-sm" onclick='Schedule.openEdit(${JSON.stringify(i).replace(/'/g, "&#39;")})' title="עריכה">✏️</button>
+                    <button class="icon-btn-sm" onclick="Schedule.remove('${i.id}')" title="מחיקה">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  },
+
+  form(item) {
+    item = item || {};
+    return `
+      <div class="modal-header"><span class="modal-title">${item.id ? 'עריכת אירוע' : 'אירוע חדש בלו״ז'}</span>
+        <button class="modal-close" onclick="Modal.hide()">×</button></div>
+      <div class="form-group"><label class="form-label">יום</label>
+        <select class="form-select" id="scDay">${this.DAYS.map(d => `<option ${item.day === d ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">שעה</label>
+        <input class="form-input" id="scTime" inputmode="numeric" placeholder="19:00" value="${esc(fmtTimeCell(item.time) || '')}"></div>
+      <div class="form-group"><label class="form-label">מה קורה?</label>
+        <input class="form-input" id="scTitle" value="${esc(item.title || '')}" placeholder="לדוגמה: מנגל בחצר" maxlength="70"></div>
+      <div class="form-group"><label class="form-label">סוג</label>
+        <select class="form-select" id="scType">${this.TYPES.map(t => `<option value="${t[0]}" ${item.type === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">פירוט (לא חובה)</label>
+        <textarea class="form-textarea" id="scDetail" placeholder="פרטים נוספים">${esc(item.detail || '')}</textarea></div>
+      <div class="modal-footer">
+        ${item.id ? `<button class="btn btn-danger" onclick="Schedule.remove('${item.id}', true)">מחיקה</button>` : ''}
+        <button class="btn btn-primary btn-block" onclick="Schedule.save('${item.id || ''}')">שמירה</button>
+      </div>`;
+  },
+  openAdd(day) { Modal.show(this.form({ day: day || this.DAYS[0], type: 'activity' })); },
+  openEdit(item) { Modal.show(this.form(item)); },
+
+  async save(id) {
+    const day = $('scDay').value, time = $('scTime').value.trim(), title = $('scTitle').value.trim();
+    const type = $('scType').value, detail = $('scDetail').value.trim();
+    if (!title) { showToast('צריך כותרת לאירוע', 'warning'); return; }
+    try {
+      const res = await apiCall(id ? 'updateSchedule' : 'addSchedule', { id, day, time, title, type, detail });
+      if (!res.success) throw new Error(res.message || 'שגיאה');
+      Modal.hide(); showToast(id ? 'עודכן ✓' : 'נוסף ללו״ז 🗓️', 'success'); playChime();
+      App.loadSchedule();
+    } catch (e) { showToast(e.message, 'error'); }
+  },
+  async remove(id, fromModal) {
+    if (!confirm('למחוק את האירוע מהלו״ז?')) return;
+    try {
+      const res = await apiCall('deleteSchedule', { id });
+      if (!res.success) throw new Error(res.message || 'שגיאה');
+      if (fromModal) Modal.hide();
+      showToast('נמחק', 'info'); App.loadSchedule();
+    } catch (e) { showToast(e.message, 'error'); }
   },
 };
 
@@ -528,13 +603,28 @@ function emptyState(ic, title, sub) {
 }
 function typeIcon(t) { return t === 'meal' ? '🍽️' : t === 'activity' ? '🎪' : t === 'travel' ? '🚗' : '📍'; }
 
-// תאריך מ-'dd/MM/yyyy' או 'dd/MM/yyyy HH:mm'
+// שעה מהתא — מטפל גם ב-"HH:mm" וגם בפורמט ISO ש-Sheets ממיר אליו אוטומטית
+function fmtTimeCell(t) {
+  if (!t) return '';
+  const s = String(t);
+  if (s.indexOf('T') === -1) return s;              // כבר "HH:mm"
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  try { return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' }); }
+  catch (e) { return s; }
+}
+
+// תאריך מ-'dd/MM/yyyy [HH:mm]' או מפורמט ISO (Sheets ממיר תאריכים לערכי-תאריך)
 function parseHebDate(str) {
   if (!str) return null;
-  const m = String(str).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
-  if (!m) return null;
-  const d = new Date(+m[3], +m[2] - 1, +m[1], m[4] ? +m[4] : 9, m[5] ? +m[5] : 0);
-  return isNaN(d) ? null : d;
+  const s = String(str).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if (m) {
+    const d = new Date(+m[3], +m[2] - 1, +m[1], m[4] ? +m[4] : 9, m[5] ? +m[5] : 0);
+    return isNaN(d) ? null : d;
+  }
+  const d2 = new Date(s);
+  return isNaN(d2) ? null : d2;
 }
 
 /* ═══════════════════════════════════════════════════════════

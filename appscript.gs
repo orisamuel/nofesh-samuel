@@ -13,7 +13,7 @@
 //        Deploy → Manage deployments → ✏ edit → Version: New version → Deploy
 // ============================================================
 
-const SHEET_ID = 'PASTE_YOUR_SHEET_ID_HERE';
+const SHEET_ID = '1BBq7B_SEz6RkaIS9O1VwEhSggPYyYa2_VNbgpxwmcd8';
 
 // ============================================================
 // HELPERS
@@ -65,8 +65,17 @@ function findRow2(sheet, c1, v1, c2, v2) {
   return -1;
 }
 
+// מציאת שורה לפי id בעמודה הראשונה (0) — מחזיר אינדקס 1-based או -1
+function findRowById(sheet, id) {
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) if (String(data[i][0]) === String(id)) return i + 1;
+  return -1;
+}
+
 function uid() { return Utilities.getUuid().substring(0, 8); }
 function nowISO() { return new Date().toISOString(); }
+function fmtDate(d) { return Utilities.formatDate(d, 'Asia/Jerusalem', 'dd/MM/yyyy'); }
+function fmtTime(d) { return Utilities.formatDate(d, 'Asia/Jerusalem', 'HH:mm'); }
 
 // ============================================================
 // SCHEMAS + SEED (הנתונים האמיתיים מקבוצת הוואטסאפ)
@@ -132,19 +141,17 @@ const PACKING_SEED = [
 // Schema: id(0), day(1), order(2), time(3), title(4), type(5), detail(6), active(7)
 const SCHED_H = ['id', 'day', 'order', 'time', 'title', 'type', 'detail', 'active'];
 const SCHED_SEED = [
-  ['s1', 'יום ראשון', 101, '16:00', 'הגעה וקליטה', 'other', 'מתמקמים ומתארגנים', 'כן'],
-  ['s2', 'יום ראשון', 102, '19:00', 'ארוחת ערב משותפת', 'meal', '', 'כן'],
-  ['s3', 'יום ראשון', 103, '21:00', 'פעילות פתיחה', 'activity', 'ערב ראשון מפתיע', 'כן'],
-  ['s4', 'יום שני', 201, '08:30', 'ארוחת בוקר', 'meal', '', 'כן'],
-  ['s5', 'יום שני', 202, '10:00', 'זמן חופשי / טיול', 'activity', '', 'כן'],
-  ['s6', 'יום שני', 203, '13:00', 'ארוחת צהריים', 'meal', '', 'כן'],
-  ['s7', 'יום שני', 204, '17:00', 'בריכה ומשחקים', 'activity', '', 'כן'],
-  ['s8', 'יום שני', 205, '19:30', 'ארוחת ערב', 'meal', '', 'כן'],
-  ['s9', 'יום שני', 206, '21:00', 'פעילות ערב', 'activity', '', 'כן'],
-  ['s10', 'יום שלישי', 301, '08:30', 'ארוחת בוקר', 'meal', '', 'כן'],
-  ['s11', 'יום שלישי', 302, '11:00', 'סיכום וקיפול', 'other', '', 'כן'],
-  ['s12', 'יום שלישי', 303, '13:00', 'ארוחת צהריים קלה', 'meal', '', 'כן'],
-  ['s13', 'יום שלישי', 304, '14:30', 'נסיעה הביתה', 'travel', 'פעילות אינטראקטיבית לדרך!', 'כן'],
+  ['s1', 'יום ראשון', 101, '11:00', 'מגיעים לכינרת', 'activity', 'נפגשים ומתחילים את הנופש', 'כן'],
+  ['s2', 'יום ראשון', 102, '13:30', 'ארוחת צהריים', 'meal', '', 'כן'],
+  ['s3', 'יום ראשון', 103, '15:00', 'הגעה לווילה', 'travel', '', 'כן'],
+  ['s4', 'יום ראשון', 104, '15:30', 'השתבצות לחדרים', 'other', '', 'כן'],
+  ['s5', 'יום ראשון', 105, '19:00', 'מנגל! 🔥', 'meal', '', 'כן'],
+  ['s6', 'יום ראשון', 106, '21:00', 'תחרות המערכונים', 'activity', 'כל משפחה מכינה מערכון', 'כן'],
+  ['s7', 'יום שני', 201, '09:00', 'ארוחת בוקר', 'meal', '', 'כן'],
+  ['s8', 'יום שני', 202, '10:30', 'פעילויות', 'activity', 'ועוד הרבה כיף', 'כן'],
+  ['s9', 'יום שלישי', 301, '09:00', 'ארוחת בוקר', 'meal', '', 'כן'],
+  ['s10', 'יום שלישי', 302, '10:30', 'פעילויות', 'activity', '', 'כן'],
+  ['s11', 'יום שלישי', 303, '13:00', 'חוזרים הביתה בכיף ובשמחה', 'travel', '', 'כן'],
 ];
 
 // Schema: id(0), category(1), question(2), opt1(3), opt2(4), opt3(5), opt4(6), correct(7 · 1-based), active(8)
@@ -173,7 +180,10 @@ function getSettings() {
   try {
     const rows = getObjects('settings', SETTINGS_H, SETTINGS_SEED);
     const settings = {};
-    rows.forEach(r => { if (r.key) settings[r.key] = r.value; });
+    rows.forEach(r => {
+      if (!r.key) return;
+      settings[r.key] = (r.value instanceof Date) ? Utilities.formatDate(r.value, 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm') : r.value;
+    });
     return { success: true, settings };
   } catch (e) { Logger.log('getSettings ' + e); return { success: false, message: e.toString(), settings: {} }; }
 }
@@ -276,12 +286,64 @@ function getPacking() {
 // ============================================================
 // SCHEDULE
 // ============================================================
+const DAY_RANK = { 'יום ראשון': 1, 'יום שני': 2, 'יום שלישי': 3, 'יום רביעי': 4, 'יום חמישי': 5, 'יום שישי': 6, 'שבת': 7 };
+function timeToMin(t) { const m = String(t || '').match(/^(\d{1,2}):(\d{2})/); return m ? (+m[1] * 60 + +m[2]) : 9999; }
+
 function getSchedule() {
   try {
     const rows = getObjects('schedule', SCHED_H, SCHED_SEED).filter(i => isActive(i.active));
-    rows.sort((a, b) => (parseInt(a.order) || 0) - (parseInt(b.order) || 0));
-    return { success: true, schedule: rows.map(i => ({ day: i.day, time: i.time, title: i.title, type: i.type, detail: i.detail })) };
+    const mapped = rows.map(i => ({
+      id: i.id, day: i.day,
+      time: (i.time instanceof Date) ? fmtTime(i.time) : String(i.time || ''),
+      title: i.title, type: i.type, detail: i.detail
+    }));
+    mapped.sort((a, b) => {
+      const dr = (DAY_RANK[a.day] || 99) - (DAY_RANK[b.day] || 99);
+      return dr !== 0 ? dr : timeToMin(a.time) - timeToMin(b.time);
+    });
+    return { success: true, schedule: mapped };
   } catch (e) { Logger.log('getSchedule ' + e); return { success: false, message: e.toString(), schedule: [] }; }
+}
+
+// כל אחד יכול להוסיף/לערוך/למחוק בלוקים בלו״ז מתוך האתר
+function addSchedule(p) {
+  try {
+    const sheet = ensureSheet('schedule', SCHED_H);
+    const id = uid();
+    sheet.appendRow([id, p.day || '', 999, p.time || '', p.title || '', p.type || 'other', p.detail || '', 'כן']);
+    return { success: true, id: id };
+  } catch (e) { Logger.log('addSchedule ' + e); return { success: false, message: e.toString() }; }
+}
+function updateSchedule(p) {
+  try {
+    const sheet = getSheet('schedule'); if (!sheet) return { success: false, message: 'אין לו״ז' };
+    const row = findRowById(sheet, p.id); if (row === -1) return { success: false, message: 'האירוע לא נמצא' };
+    if (p.day    !== undefined) sheet.getRange(row, 2).setValue(p.day);
+    if (p.time   !== undefined) sheet.getRange(row, 4).setValue(p.time);
+    if (p.title  !== undefined) sheet.getRange(row, 5).setValue(p.title);
+    if (p.type   !== undefined) sheet.getRange(row, 6).setValue(p.type);
+    if (p.detail !== undefined) sheet.getRange(row, 7).setValue(p.detail);
+    return { success: true };
+  } catch (e) { Logger.log('updateSchedule ' + e); return { success: false, message: e.toString() }; }
+}
+function deleteSchedule(id) {
+  try {
+    const sheet = getSheet('schedule'); if (!sheet) return { success: false, message: 'אין לו״ז' };
+    const row = findRowById(sheet, id); if (row === -1) return { success: false, message: 'האירוע לא נמצא' };
+    sheet.getRange(row, 8).setValue('לא');
+    return { success: true };
+  } catch (e) { Logger.log('deleteSchedule ' + e); return { success: false, message: e.toString() }; }
+}
+// איפוס חד-פעמי של הלו״ז לתוכן ההתחלתי (מוגן בטוקן)
+function resetSchedule(token) {
+  try {
+    if (token !== 'samuel-2026') return { success: false, message: 'unauthorized' };
+    const sh = ensureSheet('schedule', SCHED_H);
+    const last = sh.getLastRow();
+    if (last > 1) sh.deleteRows(2, last - 1);
+    seedIfEmpty(sh, SCHED_SEED);
+    return { success: true, rows: sh.getLastRow() };
+  } catch (e) { Logger.log('resetSchedule ' + e); return { success: false, message: e.toString() }; }
 }
 
 // ============================================================
@@ -442,6 +504,10 @@ function doPost(e) {
       // מה להביא / לו״ז / חידון
       case 'getPacking':  return jsonResponse(getPacking());
       case 'getSchedule': return jsonResponse(getSchedule());
+      case 'addSchedule':    return jsonResponse(addSchedule({ day: p.day, time: p.time, title: p.title, type: p.type, detail: p.detail }));
+      case 'updateSchedule': return jsonResponse(updateSchedule({ id: p.id, day: p.day, time: p.time, title: p.title, type: p.type, detail: p.detail }));
+      case 'deleteSchedule': return jsonResponse(deleteSchedule(p.id));
+      case 'resetSchedule':  return jsonResponse(resetSchedule(p.token));
       case 'getQuiz':     return jsonResponse(getQuiz());
 
       // משחקים

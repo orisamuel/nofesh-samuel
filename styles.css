@@ -509,6 +509,13 @@ main { flex: 1; }
 .tl-time { font-family: var(--font-fun); font-weight: 600; color: var(--accent); font-size: 0.9rem; }
 .tl-title { font-weight: 800; font-size: 1.02rem; margin: 2px 0; }
 .tl-detail { color: var(--text-secondary); font-size: 0.88rem; }
+.tl-actions { display: flex; gap: 5px; flex: none; }
+.icon-btn-sm {
+  width: 32px; height: 32px; border-radius: 9px; font-size: 0.85rem;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  display: grid; place-items: center; transition: var(--t-fast);
+}
+.icon-btn-sm:hover { background: var(--glass-hover); transform: translateY(-1px); }
 
 /* ── השתבצויות ────────────────────────────────────────────── */
 .subtabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }

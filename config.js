@@ -6,10 +6,10 @@ const CONFIG = {
 
     // ── כתובת ה-Web App של Google Apps Script ────────────────
     // מדביקים כאן את ה-URL מ: עורך Apps Script → Deploy → Manage deployments
-    SCRIPT_URL: 'PASTE_YOUR_DEPLOYED_SCRIPT_URL_HERE',
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyYBmY4t6NcH-COCvbzcSGzQBXJ_JSkqAAyJrZgFXcCzHetYdjeRcVI3b2wDH7dT3yjnA/exec',
 
     // ── קישור ישיר לגיליון (לכפתור "עריכה בגיליון") ──────────
-    SHEETS_URL: 'https://docs.google.com/spreadsheets/d/PASTE_SHEET_ID/edit',
+    SHEETS_URL: 'https://docs.google.com/spreadsheets/d/1BBq7B_SEz6RkaIS9O1VwEhSggPYyYa2_VNbgpxwmcd8/edit',
 
     // ── זהות האתר ────────────────────────────────────────────
     APP_NAME:     'נופש סמואל',

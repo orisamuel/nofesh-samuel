@@ -97,12 +97,10 @@ const USERS_H = ['id', 'name', 'family', 'avatar', 'pin', 'active', 'created'];
 // Schema: id(0), category(1), title(2), detail(3), day(4), needed(5), active(6)
 const ASSIGN_H = ['id', 'category', 'title', 'detail', 'day', 'needed', 'active'];
 const ASSIGN_SEED = [
-  ['m1', 'ארוחה', 'ארוחת ערב', '', 'יום ראשון', 2, 'כן'],
-  ['m2', 'ארוחה', 'ארוחת בוקר', '', 'יום שני', 2, 'כן'],
-  ['m3', 'ארוחה', 'ארוחת צהריים', '', 'יום שני', 2, 'כן'],
-  ['m4', 'ארוחה', 'ארוחת ערב', '', 'יום שני', 2, 'כן'],
-  ['m5', 'ארוחה', 'ארוחת בוקר', '', 'יום שלישי', 2, 'כן'],
-  ['m6', 'ארוחה', 'ארוחת צהריים', '', 'יום שלישי', 2, 'כן'],
+  ['m1', 'ארוחה', 'ארוחת צהריים', '', 'יום שני', 2, 'כן'],
+  ['m2', 'ארוחה', 'ארוחת ערב', '', 'יום שני', 2, 'כן'],
+  ['m3', 'ארוחה', 'ארוחת בוקר', '', 'יום שלישי', 2, 'כן'],
+  ['m4', 'ארוחה', 'ארוחת צהריים', '', 'יום שלישי', 2, 'כן'],
   ['a1', 'פעילות', 'פעילות ערב ראשון', 'ערב פתיחה', 'יום ראשון', 1, 'כן'],
   ['a2', 'פעילות', 'פעילות ערב שני', '', 'יום שני', 1, 'כן'],
   ['a3', 'פעילות', 'פעילות אינטראקטיבית לנסיעות', 'משהו כיף לדרך', '', 1, 'כן'],
@@ -346,6 +344,66 @@ function resetSchedule(token) {
   } catch (e) { Logger.log('resetSchedule ' + e); return { success: false, message: e.toString() }; }
 }
 
+// ── מילוי השתבצויות לפי סקר הוואטסאפ (חד-פעמי, מוגן בטוקן) ──
+const POLL_USERS = [
+  ['חננאלי', '🦁'], ['ינוני', '🦊'], ['תהילה סמואל', '🐻'], ['הודיה היקרה', '🌻'],
+  ['רנינוש', '🐙'], ['עמיחי', '🦄'], ['אמונהלי', '🐸'], ['רוניק היפה', '🦋'], ['רותם סמואל', '🐬']
+];
+const POLL_CLAIMS = [
+  ['m1', ['הודיה היקרה']],                          // ארוחת צהריים · יום שני
+  ['m2', ['אמונהלי']],                              // ארוחת ערב · יום שני
+  ['m3', ['רותם סמואל', 'רוניק היפה']],             // ארוחת בוקר · יום שלישי
+  ['k1', ['הודיה היקרה', 'עמיחי', 'אמונהלי']],       // מחבת חלבית
+  ['k2', ['הודיה היקרה']],                          // סיר חלבי
+  ['k3', ['הודיה היקרה', 'רוניק היפה']],            // סיר בשרי
+  ['k4', ['רנינוש']],                               // מחבת בשרי
+  ['k5', ['רנינוש', 'אמונהלי', 'רוניק היפה']],       // כף ומזלג בשריים
+  ['k6', ['תהילה סמואל', 'אמונהלי', 'רוניק היפה']],  // כף ומזלג חלביים
+  ['k7', ['עמיחי', 'אמונהלי']],                      // כוסות חמה
+  ['k8', ['ינוני', 'עמיחי']],                        // כוסות קרה
+  ['k9', ['הודיה היקרה', 'עמיחי']],                  // צלחות גדולות
+  ['k10', ['תהילה סמואל']],                          // צלחות קטנות
+  ['k11', ['חננאלי', 'ינוני']],                      // מרקיות
+  ['k12', ['חננאלי', 'תהילה סמואל']],                // קעריות קטנות
+];
+
+function getOrCreateUserByName(name, avatar) {
+  const sheet = ensureSheet('users', USERS_H);
+  const found = getObjects('users', USERS_H).find(u => String(u.name).trim() === String(name).trim() && isActive(u.active));
+  if (found) return found.id;
+  const id = uid();
+  sheet.appendRow([id, name, '', avatar || '🙂', '', 'כן', nowISO()]);
+  return id;
+}
+
+function resetPoll(token) {
+  try {
+    if (token !== 'samuel-2026') return { success: false, message: 'unauthorized' };
+    // איפוס assignments לרשימה המעודכנת
+    const aSheet = ensureSheet('assignments', ASSIGN_H);
+    let last = aSheet.getLastRow();
+    if (last > 1) aSheet.deleteRows(2, last - 1);
+    seedIfEmpty(aSheet, ASSIGN_SEED);
+    // איפוס claims
+    const cSheet = ensureSheet('claims', CLAIMS_H);
+    last = cSheet.getLastRow();
+    if (last > 1) cSheet.deleteRows(2, last - 1);
+    // יצירת/איתור משתמשים
+    const nameToId = {}, nameToAv = {};
+    POLL_USERS.forEach(u => { nameToId[u[0]] = getOrCreateUserByName(u[0], u[1]); nameToAv[u[0]] = u[1]; });
+    // כתיבת ההשתבצויות
+    const rows = [];
+    POLL_CLAIMS.forEach(function (pc) {
+      pc[1].forEach(function (nm) {
+        const uidv = nameToId[nm] || getOrCreateUserByName(nm, '🙂');
+        rows.push([uid(), pc[0], uidv, nm, nameToAv[nm] || '🙂', '', nowISO(), 'כן']);
+      });
+    });
+    if (rows.length) cSheet.getRange(cSheet.getLastRow() + 1, 1, rows.length, CLAIMS_H.length).setValues(rows);
+    return { success: true, users: POLL_USERS.length, claims: rows.length };
+  } catch (e) { Logger.log('resetPoll ' + e); return { success: false, message: e.toString() }; }
+}
+
 // ============================================================
 // QUIZ
 // ============================================================
@@ -508,6 +566,7 @@ function doPost(e) {
       case 'updateSchedule': return jsonResponse(updateSchedule({ id: p.id, day: p.day, time: p.time, title: p.title, type: p.type, detail: p.detail }));
       case 'deleteSchedule': return jsonResponse(deleteSchedule(p.id));
       case 'resetSchedule':  return jsonResponse(resetSchedule(p.token));
+      case 'resetPoll':      return jsonResponse(resetPoll(p.token));
       case 'getQuiz':     return jsonResponse(getQuiz());
 
       // משחקים

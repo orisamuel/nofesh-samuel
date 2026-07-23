@@ -44,7 +44,7 @@ const Games = {
       const res = await apiCall('getLeaderboard');
       const rows = (res.success && res.leaderboard) ? res.leaderboard : [];
       const me = Profile.get();
-      if (me) { const mine = rows.find(r => r.userId === me.id); if (mine) { Profile.points = mine.points; Profile.updateChip(); } }
+      if (me) { const mine = rows.find(r => r.userId === me.id); if (mine) { Profile.setPoints(mine.points); } }
       if (!rows.length) { box.innerHTML = emptyState('🎮', 'עדיין אין תוצאות', 'שחקו כדי לפתוח את הטבלה!'); return; }
       const medal = ['🥇', '🥈', '🥉'];
       box.innerHTML = rows.map((r, i) => `
@@ -202,7 +202,7 @@ const Games = {
     if (CONFIGURED && me) {
       try {
         const res = await apiCall('submitScore', { userId: me.id, gameId, score, name: me.name, avatar: me.avatar, family: me.family || '' });
-        if (res.success) { added = res.added; isBest = res.isBest; total = res.totalPoints; Profile.points = total; Profile.updateChip(); }
+        if (res.success) { added = res.added; isBest = res.isBest; total = res.totalPoints; Profile.setPoints(total); }
       } catch (e) { showToast('הניקוד לא נשמר: ' + e.message, 'warning'); }
     }
     this.bests = this.bests || {};

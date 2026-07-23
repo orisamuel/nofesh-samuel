@@ -145,6 +145,38 @@ const App = {
     this.cdTimer = setInterval(tick, 1000);
   },
 
+  // ── הפעילות הבאה (מחושב מהלו״ז) ──
+  async loadNextActivity() {
+    if (!CONFIGURED) return;
+    let items = this.state.schedule;
+    if (!items) {
+      try { const res = await apiCall('getSchedule'); items = (res.success && res.schedule) ? res.schedule : []; this.state.schedule = items; }
+      catch (e) { return; }
+    }
+    const base = parseHebDate(this.setting('vacationStart', ''));
+    const card = $('nextActivityCard'), body = $('nextActivityBody');
+    if (!base || !items || !items.length) { if (card) card.style.display = 'none'; return; }
+    const off = { 'יום ראשון': 0, 'יום שני': 1, 'יום שלישי': 2, 'יום רביעי': 3, 'יום חמישי': 4, 'יום שישי': 5, 'שבת': 6 };
+    const now = Date.now();
+    let next = null;
+    for (const it of items) {
+      if (off[it.day] == null) continue;
+      const m = fmtTimeCell(it.time).match(/^(\d{1,2}):(\d{2})/);
+      const dt = new Date(base.getFullYear(), base.getMonth(), base.getDate() + off[it.day], m ? +m[1] : 9, m ? +m[2] : 0);
+      if (dt.getTime() >= now) { next = { it, dt }; break; }
+    }
+    if (!next) { card.style.display = 'none'; return; }
+    body.innerHTML = `
+      <div class="row between wrap-gap" style="align-items:center;">
+        <div style="min-width:0;">
+          <div class="tl-title" style="font-size:1.3rem;">${typeIcon(next.it.type)} ${esc(next.it.title)}</div>
+          <div class="muted" style="margin-top:3px;">${esc(next.it.day)}${next.it.time ? ' · ' + esc(fmtTimeCell(next.it.time)) : ''}${next.it.detail ? ' · ' + esc(next.it.detail) : ''}</div>
+        </div>
+        <span class="chip coral" style="font-size:0.9rem;">${esc(relTime(next.dt.getTime() - now))}</span>
+      </div>`;
+    card.style.display = 'block';
+  },
+
   // ── לו״ז ──
   async loadSchedule() {
     const box = $('scheduleList');
@@ -212,7 +244,7 @@ const Schedule = {
       <div class="form-group"><label class="form-label">יום</label>
         <select class="form-select" id="scDay">${this.DAYS.map(d => `<option ${item.day === d ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
       <div class="form-group"><label class="form-label">שעה</label>
-        <input class="form-input" id="scTime" inputmode="numeric" placeholder="19:00" value="${esc(fmtTimeCell(item.time) || '')}"></div>
+        <input class="form-input" id="scTime" type="time" value="${esc(fmtTimeCell(item.time) || '')}"></div>
       <div class="form-group"><label class="form-label">מה קורה?</label>
         <input class="form-input" id="scTitle" value="${esc(item.title || '')}" placeholder="לדוגמה: מנגל בחצר" maxlength="70"></div>
       <div class="form-group"><label class="form-label">סוג</label>
@@ -260,6 +292,14 @@ const Profile = {
   set(p) { localStorage.setItem(this.KEY, JSON.stringify(p)); this.updateChip(); },
   clear() { localStorage.removeItem(this.KEY); this.points = 0; this.updateChip(); },
 
+  // עדכון נקודות + שמירה מקומית — כך שהצ'יפ מציג ערך מיידית בטעינה הבאה (לפני שהשרת עונה)
+  setPoints(n) {
+    this.points = n || 0;
+    const p = this.get();
+    if (p) { p.points = this.points; localStorage.setItem(this.KEY, JSON.stringify(p)); }
+    this.updateChip();
+  },
+
   updateChip() {
     const p = this.get();
     $('chipAvatar').textContent = p ? p.avatar : '🙂';
@@ -274,7 +314,7 @@ const Profile = {
     try {
       const res = await apiCall('getSummary', { userId: p.id });
       if (res.success && res.summary && typeof res.summary.myPoints === 'number') {
-        this.points = res.summary.myPoints; this.updateChip();
+        this.setPoints(res.summary.myPoints);
       }
     } catch (e) {}
   },
@@ -290,6 +330,7 @@ const Profile = {
     const p = this.get();
     Modal.show(p ? this.viewProfile(p) : this.viewChooser());
     if (!p) this.attachCreate();
+    else this.refreshPoints();
   },
 
   // תצוגת פרופיל קיים
@@ -365,8 +406,8 @@ const Profile = {
     try {
       const res = await apiCall('createUser', { name, family, avatar, pin });
       if (!res.success) throw new Error(res.message || 'שגיאה');
-      this.points = 0;
       this.set({ id: res.user.id, name: res.user.name, family: res.user.family, avatar: res.user.avatar });
+      this.setPoints(0);
       Modal.hide(); burstConfetti(80); playChime();
       showToast(`ברוכים הבאים, ${name}! 🎉`, 'success');
       App.loadSummary();
@@ -400,8 +441,8 @@ const Profile = {
         if (!res.success) throw new Error(res.message || 'קוד שגוי');
       } catch (e) { showToast(e.message, 'error'); return; }
     }
-    this.points = u.points || 0;
     this.set({ id: u.id, name: u.name, family: u.family, avatar: u.avatar });
+    this.setPoints(u.points || 0);
     Modal.hide(); showToast(`שלום ${u.name}! 👋`, 'success'); App.loadSummary();
   },
 };
@@ -628,6 +669,16 @@ function parseHebDate(str) {
   return isNaN(d2) ? null : d2;
 }
 
+// טקסט זמן יחסי לעתיד ("בעוד ...")
+function relTime(ms) {
+  if (ms <= 60000) return 'עכשיו';
+  const min = Math.round(ms / 60000);
+  if (min < 60) return `בעוד ${min} דק׳`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `בעוד ${hr} שע׳`;
+  return `בעוד ${Math.round(hr / 24)} ימים`;
+}
+
 /* ═══════════════════════════════════════════════════════════
    אתחול
    ═══════════════════════════════════════════════════════════ */
@@ -635,6 +686,7 @@ function parseHebDate(str) {
   initTheme();
   App.buildNav();
   App.applySettings();          // ברירות מחדל מיידיות
+  Profile.points = (Profile.get() || {}).points || 0;   // נקודות אחרונות ידועות — מיידי
   Profile.updateChip();
   warmupServer();
 
@@ -645,7 +697,7 @@ function parseHebDate(str) {
   await App.loadSettings();
   App.applySettings();          // דריסה מהגיליון
   App.startCountdown();
-  await Promise.all([App.loadSummary(), Profile.refreshPoints()]);
+  await Promise.all([App.loadSummary(), Profile.refreshPoints(), App.loadNextActivity()]);
 
   // ניווט לפי hash אם קיים
   const h = (location.hash || '').replace('#', '');

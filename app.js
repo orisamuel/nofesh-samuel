@@ -686,6 +686,8 @@ function relTime(ms) {
   initTheme();
   App.buildNav();
   App.applySettings();          // ברירות מחדל מיידיות
+  // פרופיל שנוצר במצב תצוגה מקדימה (id "local-") אינו תקף מול השרת — ננקה כדי למנוע כפילויות בטבלה
+  if (CONFIGURED) { const _pp = Profile.get(); if (_pp && String(_pp.id).indexOf('local-') === 0) Profile.clear(); }
   Profile.points = (Profile.get() || {}).points || 0;   // נקודות אחרונות ידועות — מיידי
   Profile.updateChip();
   warmupServer();

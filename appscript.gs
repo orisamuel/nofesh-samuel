@@ -404,6 +404,21 @@ function resetPoll(token) {
   } catch (e) { Logger.log('resetPoll ' + e); return { success: false, message: e.toString() }; }
 }
 
+// ניקוי שורות ניקוד של פרופילים מקומיים (local-) — להרצה ישירה מהעורך
+function cleanupLocalScores() {
+  const sheet = getSheet('scores');
+  if (!sheet) return 'no scores sheet';
+  const data = sheet.getDataRange().getValues();
+  let n = 0;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).indexOf('local-') === 0 && data[i][8] !== 'לא') {
+      sheet.getRange(i + 1, 9).setValue('לא'); n++;
+    }
+  }
+  Logger.log('deactivated ' + n + ' local score rows');
+  return n;
+}
+
 // ============================================================
 // QUIZ
 // ============================================================

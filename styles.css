@@ -715,6 +715,53 @@ main { flex: 1; }
 .center { text-align: center; }
 .spinner-sm { width: 20px; height: 20px; border: 2.5px solid var(--glass-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
 
+/* ── מוטו בפרופיל ─────────────────────────────────────────── */
+.profile-motto {
+  margin-top: 8px; font-family: var(--font-display); font-size: 1rem;
+  color: var(--pine); font-style: italic; line-height: 1.4;
+}
+
+/* ── לוח חי: עכשיו / הבא ───────────────────────────────────── */
+.live-row {
+  display: flex; align-items: center; gap: 12px; padding: 11px 4px;
+}
+.live-row + .live-row { border-top: 1px dashed var(--paper-line); }
+.live-tag {
+  flex: none; font-family: var(--font-fun); font-weight: 700; font-size: 0.72rem;
+  padding: 4px 10px; border-radius: var(--radius-pill); letter-spacing: 0.5px;
+}
+.live-row.now .live-tag { background: var(--accent); color: var(--on-accent); }
+.live-row.next .live-tag { background: var(--glass-bg); color: var(--text-secondary); border: 1px solid var(--glass-border); }
+.live-body { min-width: 0; flex: 1; }
+.live-title { font-weight: 800; font-size: 1.08rem; }
+.live-meta { font-size: 0.82rem; margin-top: 2px; }
+.live-when { flex: none; font-size: 0.82rem; }
+.live-pulse { flex: none; color: var(--accent); font-size: 0.7rem; animation: livePulse 1.4s ease-in-out infinite; }
+@keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+/* ── אווטאר תפוס (בבורר) ──────────────────────────────────── */
+.avatar-opt.taken { opacity: 0.32; filter: grayscale(0.6); position: relative; }
+.avatar-opt.taken::after {
+  content: '·'; position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 0.9rem;
+}
+.avatar-opt.taken.selected { opacity: 1; filter: none; }
+
+/* ── כפתור לייק בקיר ──────────────────────────────────────── */
+.like-btn {
+  display: inline-flex; align-items: center; gap: 4px; margin-inline-start: auto;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  font-weight: 700; font-size: 0.8rem; color: var(--text-secondary); transition: var(--t-fast);
+}
+.like-btn:hover { background: var(--glass-hover); transform: translateY(-1px); }
+.like-btn.liked { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-glow); }
+.like-btn .like-ic { font-size: 0.95rem; line-height: 1; }
+.like-btn.pop .like-ic { animation: likePop 0.3s var(--ease-spring); }
+@keyframes likePop { 0% { transform: scale(1); } 45% { transform: scale(1.45); } 100% { transform: scale(1); } }
+/* כשיש כפתור לייק, הזמן כבר לא נדחף אוטומטית */
+.wall-foot .like-btn + .wall-time { margin-inline-start: 8px; }
+
 /* ── רספונסיביות ──────────────────────────────────────────── */
 @media (max-width: 720px) {
   .bottom-nav { display: flex; }

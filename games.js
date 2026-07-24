@@ -41,19 +41,28 @@ const Games = {
     const box = $('lbList'); if (!box) return;
     if (!CONFIGURED) { box.innerHTML = emptyState('🏆', 'הטבלה תופיע כאן', 'זמין אחרי חיבור הגיליון'); return; }
     try {
+      // מפת מוטו לפי משתמש (מ-getUsers) — לצירוף לטבלה
+      let mottoMap = {};
+      try {
+        let users = App.state.users;
+        if (!users) { const ur = await apiCall('getUsers'); users = (ur.success && ur.users) ? ur.users : []; App.state.users = users; }
+        users.forEach(u => { if (u.motto) mottoMap[u.id] = u.motto; });
+      } catch (e) {}
       const res = await apiCall('getLeaderboard');
       const rows = (res.success && res.leaderboard) ? res.leaderboard : [];
       const me = Profile.get();
       if (me) { const mine = rows.find(r => r.userId === me.id); if (mine) { Profile.setPoints(mine.points); } }
       if (!rows.length) { box.innerHTML = emptyState('🎮', 'עדיין אין תוצאות', 'שחקו כדי לפתוח את הטבלה!'); return; }
       const medal = ['🥇', '🥈', '🥉'];
-      box.innerHTML = rows.map((r, i) => `
+      box.innerHTML = rows.map((r, i) => {
+        const sub = mottoMap[r.userId] ? '״' + mottoMap[r.userId] + '״' : (r.family || '');
+        return `
         <div class="lb-row ${me && r.userId === me.id ? 'me' : ''} ${i < 3 ? 'top' + (i + 1) : ''}">
           <span class="lb-rank">${i < 3 ? medal[i] : (i + 1)}</span>
           <span class="avatar">${r.avatar || '🙂'}</span>
-          <span class="lb-name">${esc(r.name)}<div class="lb-fam">${esc(r.family || '')}</div></span>
+          <span class="lb-name">${esc(r.name)}<div class="lb-fam">${esc(sub)}</div></span>
           <span class="lb-points">⭐ ${r.points}</span>
-        </div>`).join('');
+        </div>`; }).join('');
     } catch (e) { box.innerHTML = emptyState('😕', 'שגיאה', e.message); }
   },
 

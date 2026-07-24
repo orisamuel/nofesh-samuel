@@ -91,8 +91,8 @@ const SETTINGS_SEED = [
   ['vacationStart', '26/07/2026 16:00'],  // ← עדכנו לתאריך האמיתי (dd/MM/yyyy HH:mm)
 ];
 
-// Schema: id(0), name(1), family(2), avatar(3), pin(4), active(5), created(6)
-const USERS_H = ['id', 'name', 'family', 'avatar', 'pin', 'active', 'created'];
+// Schema: id(0), name(1), family(2), avatar(3), pin(4), active(5), created(6), motto(7)
+const USERS_H = ['id', 'name', 'family', 'avatar', 'pin', 'active', 'created', 'motto'];
 
 // Schema: id(0), category(1), title(2), detail(3), day(4), needed(5), active(6)
 const ASSIGN_H = ['id', 'category', 'title', 'detail', 'day', 'needed', 'active'];
@@ -163,13 +163,43 @@ const QUIZ_SEED = [
   ['q6', 'טריוויה', 'מה הסלוגן של הנופש?', 'איזה יום היה לי סמואל', 'סמואל בראש', 'נופש בלי סוף', 'קיץ שמח', 1, 'כן'],
   ['q7', 'טריוויה', 'באיזה אזור נמצאת אבן מנחם?', 'הגליל העליון', 'הנגב', 'השרון', 'הגולן', 1, 'כן'],
   ['q8', 'מי אמר את זה?', 'מי פירט את רשימת הכלים (סירים ומחבתות)?', 'הודיה', 'נעומלה', 'אבא', 'נכד', 1, 'כן'],
+  ['q9', 'טריוויה', 'מתי מתחיל נופש סמואל?', '26 ביולי', '1 באוגוסט', '15 ביולי', '19 ביולי', 1, 'כן'],
+  ['q10', 'טריוויה', 'כמה ימים נמשך הנופש?', '3 ימים', 'יומיים', '4 ימים', 'שבוע', 1, 'כן'],
+  ['q11', 'טריוויה', 'באילו ימים מתקיים הנופש?', 'ראשון–שלישי', 'חמישי–שבת', 'שני–רביעי', 'שישי–שבת', 1, 'כן'],
+  ['q12', 'מי אמר את זה?', 'מי ביקש להביא "מטענים, בוקסא וגלגלים"?', 'נעומלה', 'הודיה', 'עמיחי', 'אמא', 1, 'כן'],
+  ['q13', 'טריוויה', 'מה הפעילות המרכזית בערב הראשון?', 'תחרות המערכונים', 'קריוקי', 'משחקי מים', 'ערב סרטים', 1, 'כן'],
+  ['q14', 'טריוויה', 'מה אוכלים בערב הראשון של הנופש?', 'מנגל 🔥', 'פיצה', 'סושי', 'פסטה', 1, 'כן'],
+  ['q15', 'טריוויה', 'לאן מגיעים ביום הראשון בבוקר?', 'הכינרת', 'ים המלח', 'חוף הכרמל', 'אילת', 1, 'כן'],
+  ['q16', 'טריוויה', 'כמה מרקיות צריך להביא סה״כ?', '100', '50', '200', '20', 1, 'כן'],
+  ['q17', 'טריוויה', 'מה האימוג׳י הרשמי של הנופש?', '🌅', '❄️', '🎄', '🌧️', 1, 'כן'],
+  ['q18', 'טריוויה', 'מה עושים בעמוד המשחקים?', 'צוברים נקודות', 'מצביעים', 'מעלים תמונות', 'קונים כרטיסים', 1, 'כן'],
+  ['q19', 'טריוויה', 'מה הכי חשוב להביא לנופש?', 'מצב רוח טוב 😎', 'מגהץ', 'מטרייה', 'שעון מעורר', 1, 'כן'],
+  ['q20', 'טריוויה', 'אבן מנחם נמצאת ליד איזו עיר?', 'מעלות-תרשיחא', 'טבריה', 'אשקלון', 'ירושלים', 1, 'כן'],
+  ['q21', 'טריוויה', 'מה מתוכנן לערב יום שני?', 'פעילות ערב', 'חוזרים הביתה', 'מגיעים לכינרת', 'ארוחת בוקר', 1, 'כן'],
+  ['q22', 'טריוויה', 'מתי חוזרים הביתה מהנופש?', 'יום שלישי', 'יום ראשון', 'יום שני', 'יום רביעי', 1, 'כן'],
 ];
+
+// השלמת מאגר החידון: מוסיף כל שאלה מ-QUIZ_SEED שעדיין לא קיימת בגיליון (לפי id).
+// להרצה ישירה מהעורך אחרי הוספת שאלות ל-QUIZ_SEED.
+function addQuizQuestions() {
+  const sheet = ensureSheet('quiz', QUIZ_H);
+  const existing = {};
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) existing[String(data[i][0])] = true;
+  const toAdd = QUIZ_SEED.filter(r => !existing[String(r[0])]);
+  if (toAdd.length) sheet.getRange(sheet.getLastRow() + 1, 1, toAdd.length, QUIZ_H.length).setValues(toAdd);
+  Logger.log('added ' + toAdd.length + ' quiz questions');
+  return toAdd.length;
+}
 
 // Schema: id(0), userId(1), gameId(2), best(3), name(4), avatar(5), family(6), updated(7), active(8)
 const SCORES_H = ['id', 'userId', 'gameId', 'best', 'name', 'avatar', 'family', 'updated', 'active'];
 
 // Schema: id(0), userId(1), name(2), avatar(3), family(4), message(5), imageUrl(6), timestamp(7), active(8)
 const POSTS_H = ['id', 'userId', 'name', 'avatar', 'family', 'message', 'imageUrl', 'timestamp', 'active'];
+
+// Schema: id(0), postId(1), userId(2), timestamp(3), active(4)
+const LIKES_H = ['id', 'postId', 'userId', 'timestamp', 'active'];
 
 // ============================================================
 // SETTINGS
@@ -197,7 +227,7 @@ function getUsers() {
       success: true,
       users: users.map(u => ({
         id: u.id, name: u.name, family: u.family, avatar: u.avatar,
-        hasPin: !!String(u.pin || '').trim(), points: pts[u.id] || 0
+        motto: u.motto || '', hasPin: !!String(u.pin || '').trim(), points: pts[u.id] || 0
       }))
     };
   } catch (e) { Logger.log('getUsers ' + e); return { success: false, message: e.toString(), users: [] }; }
@@ -207,9 +237,11 @@ function createUser(p) {
   try {
     if (!p.name || !String(p.name).trim()) return { success: false, message: 'חסר שם' };
     const sheet = ensureSheet('users', USERS_H);
+    ensureUsersMottoHeader(sheet);
     const id = uid();
-    sheet.appendRow([id, String(p.name).trim(), p.family || '', p.avatar || '🙂', String(p.pin || '').trim(), 'כן', nowISO()]);
-    return { success: true, user: { id, name: String(p.name).trim(), family: p.family || '', avatar: p.avatar || '🙂' } };
+    const motto = String(p.motto || '').trim();
+    sheet.appendRow([id, String(p.name).trim(), p.family || '', p.avatar || '🙂', String(p.pin || '').trim(), 'כן', nowISO(), motto]);
+    return { success: true, user: { id, name: String(p.name).trim(), family: p.family || '', avatar: p.avatar || '🙂', motto: motto } };
   } catch (e) { Logger.log('createUser ' + e); return { success: false, message: e.toString() }; }
 }
 
@@ -219,8 +251,51 @@ function loginUser(id, pin) {
     if (!u) return { success: false, message: 'משתמש לא נמצא' };
     const stored = String(u.pin || '').trim();
     if (stored && stored !== String(pin || '').trim()) return { success: false, message: 'קוד שגוי' };
-    return { success: true, user: { id: u.id, name: u.name, family: u.family, avatar: u.avatar } };
+    return { success: true, user: { id: u.id, name: u.name, family: u.family, avatar: u.avatar, motto: u.motto || '' } };
   } catch (e) { Logger.log('loginUser ' + e); return { success: false, message: e.toString() }; }
+}
+
+// כותרת עמודת motto (העמודה השמינית) — נוצרת פעם אחת אם חסרה
+function ensureUsersMottoHeader(sheet) {
+  try { if (!sheet.getRange(1, 8).getValue()) sheet.getRange(1, 8).setValue('motto'); } catch (e) {}
+}
+
+// עדכון פרופיל: שם / אווטאר / מוטו / משפחה + הפצה לשמות המשוכפלים (scores/claims/posts)
+function updateUser(p) {
+  try {
+    if (!p.id) return { success: false, message: 'חסר מזהה' };
+    const sheet = getSheet('users'); if (!sheet) return { success: false, message: 'אין משתמשים' };
+    ensureUsersMottoHeader(sheet);
+    const row = findRowById(sheet, p.id); if (row === -1) return { success: false, message: 'משתמש לא נמצא' };
+    const name   = (p.name   !== undefined) ? String(p.name).trim()   : null;
+    const family = (p.family !== undefined) ? String(p.family).trim() : null;
+    const avatar = (p.avatar !== undefined) ? String(p.avatar).trim() : null;
+    const motto  = (p.motto  !== undefined) ? String(p.motto).trim()  : null;
+    if (name !== null) { if (!name) return { success: false, message: 'צריך שם' }; sheet.getRange(row, 2).setValue(name); }
+    if (family !== null) sheet.getRange(row, 3).setValue(family);
+    if (avatar !== null) sheet.getRange(row, 4).setValue(avatar || '🙂');
+    if (motto  !== null) sheet.getRange(row, 8).setValue(motto);
+    cascadeUserDisplay(p.id, name, avatar, family);
+    const u = getObjects('users', USERS_H).find(x => String(x.id) === String(p.id));
+    return { success: true, user: { id: u.id, name: u.name, family: u.family, avatar: u.avatar, motto: u.motto || '' } };
+  } catch (e) { Logger.log('updateUser ' + e); return { success: false, message: e.toString() }; }
+}
+
+// עדכון השם/אווטאר/משפחה המשוכפלים בכל הגיליונות שמחזיקים עותק (לוח מובילים, שיבוצים, קיר)
+function cascadeUserDisplay(id, name, avatar, family) {
+  const apply = (sheetName, userCol, nameCol, avCol, famCol) => {
+    const sh = getSheet(sheetName); if (!sh) return;
+    const data = sh.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][userCol]) !== String(id)) continue;
+      if (name   != null) sh.getRange(i + 1, nameCol + 1).setValue(name);
+      if (avatar != null) sh.getRange(i + 1, avCol + 1).setValue(avatar || '🙂');
+      if (famCol != null && family != null) sh.getRange(i + 1, famCol + 1).setValue(family);
+    }
+  };
+  apply('scores', 1, 4, 5, 6); // userId(1) name(4) avatar(5) family(6)
+  apply('claims', 2, 3, 4, 5); // userId(2) name(3) avatar(4) family(5)
+  apply('posts',  1, 2, 3, 4); // userId(1) name(2) avatar(3) family(4)
 }
 
 // ============================================================
@@ -419,6 +494,73 @@ function cleanupLocalScores() {
   return n;
 }
 
+// ── מיזוג כפילויות: מעביר הכל מ-loser ל-winner בלי לאבד נתונים, ומשבית את loser ──
+// (להרצה ישירה מהעורך דרך runMerges)
+function mergeUsers(loserId, winnerId) {
+  const uSheet = getSheet('users');
+  if (!uSheet) return 'no users sheet';
+  const uData = uSheet.getDataRange().getValues();
+  let loserRow = -1, winnerRow = -1;
+  for (let i = 1; i < uData.length; i++) {
+    if (String(uData[i][0]) === String(loserId)) loserRow = i + 1;
+    if (String(uData[i][0]) === String(winnerId)) winnerRow = i + 1;
+  }
+  if (loserRow === -1 || winnerRow === -1) return 'skip: ' + loserId + '→' + winnerId + ' (loserRow=' + loserRow + ' winnerRow=' + winnerRow + ')';
+  const wName = uData[winnerRow - 1][1], wAvatar = uData[winnerRow - 1][3] || '🙂', wFamily = uData[winnerRow - 1][2] || '';
+
+  // 1) scores — עמודה: id(0) userId(1) gameId(2) best(3) name(4) avatar(5) family(6) updated(7) active(8)
+  const scSheet = getSheet('scores');
+  if (scSheet) {
+    const d = scSheet.getDataRange().getValues();
+    const wByGame = {};
+    for (let i = 1; i < d.length; i++) if (String(d[i][1]) === String(winnerId) && d[i][8] !== 'לא') wByGame[String(d[i][2])] = { row: i + 1, best: parseInt(d[i][3]) || 0 };
+    for (let i = 1; i < d.length; i++) {
+      if (String(d[i][1]) !== String(loserId) || d[i][8] === 'לא') continue;
+      const g = String(d[i][2]), lb = parseInt(d[i][3]) || 0;
+      if (wByGame[g]) { if (lb > wByGame[g].best) scSheet.getRange(wByGame[g].row, 4).setValue(lb); scSheet.getRange(i + 1, 9).setValue('לא'); }
+      else { scSheet.getRange(i + 1, 2).setValue(winnerId); scSheet.getRange(i + 1, 5).setValue(wName); scSheet.getRange(i + 1, 6).setValue(wAvatar); scSheet.getRange(i + 1, 7).setValue(wFamily); wByGame[g] = { row: i + 1, best: lb }; }
+    }
+  }
+
+  // 2) claims — עמודה: id(0) assignmentId(1) userId(2) name(3) avatar(4) family(5) ts(6) active(7)
+  const clSheet = getSheet('claims');
+  if (clSheet) {
+    const d = clSheet.getDataRange().getValues();
+    const wByAssign = {};
+    for (let i = 1; i < d.length; i++) if (String(d[i][2]) === String(winnerId) && d[i][7] !== 'לא') wByAssign[String(d[i][1])] = true;
+    for (let i = 1; i < d.length; i++) {
+      if (String(d[i][2]) !== String(loserId) || d[i][7] === 'לא') continue;
+      const a = String(d[i][1]);
+      if (wByAssign[a]) { clSheet.getRange(i + 1, 8).setValue('לא'); }
+      else { clSheet.getRange(i + 1, 3).setValue(winnerId); clSheet.getRange(i + 1, 4).setValue(wName); clSheet.getRange(i + 1, 5).setValue(wAvatar); clSheet.getRange(i + 1, 6).setValue(wFamily); wByAssign[a] = true; }
+    }
+  }
+
+  // 3) posts — עמודה: id(0) userId(1) name(2) avatar(3) family(4) ...
+  const poSheet = getSheet('posts');
+  if (poSheet) {
+    const d = poSheet.getDataRange().getValues();
+    for (let i = 1; i < d.length; i++) if (String(d[i][1]) === String(loserId)) { poSheet.getRange(i + 1, 2).setValue(winnerId); poSheet.getRange(i + 1, 3).setValue(wName); poSheet.getRange(i + 1, 4).setValue(wAvatar); poSheet.getRange(i + 1, 5).setValue(wFamily); }
+  }
+
+  // 4) השלמת pin/משפחה ל-winner אם חסרים, ואז השבתת loser
+  const wPin = String(uData[winnerRow - 1][4] || '').trim(), lPin = String(uData[loserRow - 1][4] || '').trim();
+  if (!wPin && lPin) uSheet.getRange(winnerRow, 5).setValue(lPin);
+  if (!String(wFamily).trim() && String(uData[loserRow - 1][2] || '').trim()) uSheet.getRange(winnerRow, 3).setValue(uData[loserRow - 1][2]);
+  uSheet.getRange(loserRow, 6).setValue('לא'); // active → לא
+  return 'merged ' + loserId + ' → ' + winnerId + ' (' + wName + ')';
+}
+
+// שלושת המיזוגים שזוהו (loser → winner). Winner = הפרופיל האמיתי עם הנקודות/PIN/שם-משפחה.
+function runMerges() {
+  const out = [];
+  out.push(mergeUsers('415df4ee', '230ca050')); // אמונהלי → אמונה שחור
+  out.push(mergeUsers('ca506f2c', '9d70cf63')); // חננאלי → חננאל סמואל
+  out.push(mergeUsers('d629d325', '3be39565')); // רנינוש → רני אדלשטיין
+  Logger.log(out.join('\n'));
+  return out;
+}
+
 // ============================================================
 // QUIZ
 // ============================================================
@@ -490,7 +632,7 @@ function getLeaderboard() {
 // ============================================================
 // WALL (POSTS)
 // ============================================================
-function getPosts() {
+function getPosts(userId) {
   try {
     const sheet = ensureSheet('posts', POSTS_H);
     if (sheet.getLastRow() <= 1) {
@@ -498,7 +640,11 @@ function getPosts() {
     }
     const rows = getObjects('posts', POSTS_H).filter(p => isActive(p.active));
     rows.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    return { success: true, posts: rows.map(p => ({ id: p.id, name: p.name, avatar: p.avatar, family: p.family, message: p.message, imageUrl: p.imageUrl, ts: p.timestamp })) };
+    // מפת לייקים: postId → {count, mine}
+    const likes = getObjects('likes', LIKES_H).filter(l => isActive(l.active));
+    const cnt = {}, mine = {};
+    likes.forEach(l => { cnt[l.postId] = (cnt[l.postId] || 0) + 1; if (userId && String(l.userId) === String(userId)) mine[l.postId] = true; });
+    return { success: true, posts: rows.map(p => ({ id: p.id, userId: p.userId, name: p.name, avatar: p.avatar, family: p.family, message: p.message, imageUrl: p.imageUrl, ts: p.timestamp, likes: cnt[p.id] || 0, likedByMe: !!mine[p.id] })) };
   } catch (e) { Logger.log('getPosts ' + e); return { success: false, message: e.toString(), posts: [] }; }
 }
 
@@ -506,9 +652,30 @@ function addPost(p) {
   try {
     if (!String(p.message || '').trim() && !String(p.imageUrl || '').trim()) return { success: false, message: 'הודעה ריקה' };
     const sheet = ensureSheet('posts', POSTS_H);
-    sheet.appendRow([uid(), p.userId || '', p.name || 'אנונימי', p.avatar || '🙂', p.family || '', String(p.message || '').trim(), String(p.imageUrl || '').trim(), nowISO(), 'כן']);
-    return { success: true, message: 'פורסם' };
+    const id = uid();
+    sheet.appendRow([id, p.userId || '', p.name || 'אנונימי', p.avatar || '🙂', p.family || '', String(p.message || '').trim(), String(p.imageUrl || '').trim(), nowISO(), 'כן']);
+    return { success: true, message: 'פורסם', id: id };
   } catch (e) { Logger.log('addPost ' + e); return { success: false, message: e.toString() }; }
+}
+
+// לייק/ביטול-לייק לפוסט (טוגל, שורה אחת לכל משתמש+פוסט)
+function likePost(p) {
+  try {
+    if (!p.postId || !p.userId) return { success: false, message: 'חסרים פרטים' };
+    const sheet = ensureSheet('likes', LIKES_H);
+    const row = findRow2(sheet, 1, p.postId, 2, p.userId);
+    let liked;
+    if (row === -1) { sheet.appendRow([uid(), p.postId, p.userId, nowISO(), 'כן']); liked = true; }
+    else {
+      const cur = sheet.getRange(row, 5).getValue();
+      liked = !(cur === 'כן' || cur === true);
+      sheet.getRange(row, 5).setValue(liked ? 'כן' : 'לא');
+      if (liked) sheet.getRange(row, 4).setValue(nowISO());
+    }
+    // ספירה מעודכנת
+    const likes = getObjects('likes', LIKES_H).filter(l => isActive(l.active) && String(l.postId) === String(p.postId));
+    return { success: true, liked: liked, count: likes.length };
+  } catch (e) { Logger.log('likePost ' + e); return { success: false, message: e.toString() }; }
 }
 
 // ============================================================
@@ -566,7 +733,8 @@ function doPost(e) {
 
       // משתמשים
       case 'getUsers':    return jsonResponse(getUsers());
-      case 'createUser':  return jsonResponse(createUser({ name: p.name, family: p.family, avatar: p.avatar, pin: p.pin }));
+      case 'createUser':  return jsonResponse(createUser({ name: p.name, family: p.family, avatar: p.avatar, pin: p.pin, motto: p.motto }));
+      case 'updateUser':  return jsonResponse(updateUser({ id: p.id, name: p.name, family: p.family, avatar: p.avatar, motto: p.motto }));
       case 'loginUser':   return jsonResponse(loginUser(p.id, p.pin));
 
       // השתבצויות
@@ -582,6 +750,9 @@ function doPost(e) {
       case 'deleteSchedule': return jsonResponse(deleteSchedule(p.id));
       case 'resetSchedule':  return jsonResponse(resetSchedule(p.token));
       case 'resetPoll':      return jsonResponse(resetPoll(p.token));
+      case 'runMerges':      return jsonResponse(p.token === 'samuel-2026' ? { success: true, result: runMerges() } : { success: false, message: 'unauthorized' });
+      case 'mergeUsers':     return jsonResponse(p.token === 'samuel-2026' ? { success: true, result: mergeUsers(p.loserId, p.winnerId) } : { success: false, message: 'unauthorized' });
+      case 'addQuiz':        return jsonResponse(p.token === 'samuel-2026' ? { success: true, added: addQuizQuestions() } : { success: false, message: 'unauthorized' });
       case 'getQuiz':     return jsonResponse(getQuiz());
 
       // משחקים
@@ -589,8 +760,9 @@ function doPost(e) {
       case 'getLeaderboard': return jsonResponse(getLeaderboard());
 
       // קיר
-      case 'getPosts': return jsonResponse(getPosts());
+      case 'getPosts': return jsonResponse(getPosts(p.userId));
       case 'addPost':  return jsonResponse(addPost({ userId: p.userId, name: p.name, avatar: p.avatar, family: p.family, message: p.message, imageUrl: p.imageUrl }));
+      case 'likePost': return jsonResponse(likePost({ postId: p.postId, userId: p.userId }));
 
       default: return jsonResponse({ success: false, message: 'Unknown action: ' + p.action });
     }

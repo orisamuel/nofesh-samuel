@@ -3,6 +3,11 @@
 # תמונות המשחק המוקטנות כן נשמרות (assets/mem)
 !assets/
 
+# קבצי מקור כבדים / זמניים שלא צריכים להיות בריפו
+WhatsApp Image*.jpeg
+WhatsApp Image*.jpg
+לוז אלומה.pdf
+
 .claude/
 .DS_Store
 Thumbs.db

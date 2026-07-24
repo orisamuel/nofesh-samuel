@@ -13,6 +13,13 @@ const SECTIONS = [
   { id: 'wall',     label: 'קיר',        icon: '📮' },
 ];
 
+/* ── מטמון מקומי — מציג נתונים מיידית בזמן שהשרת נטען (Apps Script איטי ~2-3ש') ── */
+const Cache = {
+  P: 'samuel_cache_',
+  get(key) { try { return JSON.parse(localStorage.getItem(this.P + key)); } catch { return null; } },
+  set(key, data) { try { localStorage.setItem(this.P + key, JSON.stringify(data)); } catch (e) {} },
+};
+
 /* ═══════════════════════════════════════════════════════════
    App — ניווט, מצב, בית
    ═══════════════════════════════════════════════════════════ */
@@ -36,17 +43,14 @@ const App = {
     document.querySelectorAll('[data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === view));
     window.scrollTo({ top: 0, behavior: 'smooth' });
     location.hash = view;
-    // טעינה עצלה לפי מסך
-    if (!this.loaded.has(view)) {
-      this.loaded.add(view);
-      if (view === 'schedule') this.loadSchedule();
-      if (view === 'assign')   Assign.load();
-      if (view === 'packing')  Packing.load();
-      if (view === 'games')    Games.home();
-      if (view === 'wall')     Wall.load();
-    }
-    // מרעננים טבלת מובילים / קיר בכל כניסה
-    if (view === 'games' && this.loaded.has('games')) Games.refreshLeaderboard();
+    const first = !this.loaded.has(view);
+    this.loaded.add(view);
+    // כל מסך: בכניסה ראשונה טוען מלא; בכניסות הבאות מרענן ברקע (המטמון מציג מיד)
+    if (view === 'schedule') this.loadSchedule();
+    if (view === 'assign')   Assign.load();
+    if (view === 'packing')  { if (first) Packing.load(); }   // צ׳קליסט מקומי — אין צורך לרענן
+    if (view === 'games')    { if (first) Games.home(); else Games.refreshLeaderboard(); }
+    if (view === 'wall')     Wall.load();
   },
 
   notConfiguredBanner() {
@@ -145,35 +149,67 @@ const App = {
     this.cdTimer = setInterval(tick, 1000);
   },
 
-  // ── הפעילות הבאה (מחושב מהלו״ז) ──
+  // ── לוח חי: "עכשיו" + "הבא" (מחושב מהלו״ז) ──
   async loadNextActivity() {
     if (!CONFIGURED) return;
-    let items = this.state.schedule;
+    let items = this.state.schedule || Cache.get('schedule');
     if (!items) {
-      try { const res = await apiCall('getSchedule'); items = (res.success && res.schedule) ? res.schedule : []; this.state.schedule = items; }
+      try { const res = await apiCall('getSchedule'); items = (res.success && res.schedule) ? res.schedule : []; this.state.schedule = items; Cache.set('schedule', items); }
       catch (e) { return; }
     }
+    this._renderLiveBoard(items);
+    // רענון עדין כל דקה כדי ש"עכשיו/הבא" יתקדמו לבד
+    if (!this._liveTimer) this._liveTimer = setInterval(() => this._renderLiveBoard(this.state.schedule || items), 60000);
+  },
+
+  _renderLiveBoard(items) {
     const base = parseHebDate(this.setting('vacationStart', ''));
     const card = $('nextActivityCard'), body = $('nextActivityBody');
-    if (!base || !items || !items.length) { if (card) card.style.display = 'none'; return; }
+    if (!card || !body) return;
+    if (!base || !items || !items.length) { card.style.display = 'none'; return; }
     const off = { 'יום ראשון': 0, 'יום שני': 1, 'יום שלישי': 2, 'יום רביעי': 3, 'יום חמישי': 4, 'יום שישי': 5, 'שבת': 6 };
     const now = Date.now();
-    let next = null;
-    for (const it of items) {
-      if (off[it.day] == null) continue;
-      const m = fmtTimeCell(it.time).match(/^(\d{1,2}):(\d{2})/);
-      const dt = new Date(base.getFullYear(), base.getMonth(), base.getDate() + off[it.day], m ? +m[1] : 9, m ? +m[2] : 0);
-      if (dt.getTime() >= now) { next = { it, dt }; break; }
+    const timed = items
+      .filter(it => off[it.day] != null)
+      .map(it => {
+        const m = fmtTimeCell(it.time).match(/^(\d{1,2}):(\d{2})/);
+        const dt = new Date(base.getFullYear(), base.getMonth(), base.getDate() + off[it.day], m ? +m[1] : 9, m ? +m[2] : 0);
+        return { it, t: dt.getTime() };
+      })
+      .sort((a, b) => a.t - b.t);
+    if (!timed.length) { card.style.display = 'none'; return; }
+
+    let nowItem = null, nextItem = null;
+    for (let i = 0; i < timed.length; i++) {
+      if (timed[i].t <= now) nowItem = timed[i];
+      else { nextItem = timed[i]; break; }
     }
-    if (!next) { card.style.display = 'none'; return; }
-    body.innerHTML = `
-      <div class="row between wrap-gap" style="align-items:center;">
-        <div style="min-width:0;">
-          <div class="tl-title" style="font-size:1.3rem;">${typeIcon(next.it.type)} ${esc(next.it.title)}</div>
-          <div class="muted" style="margin-top:3px;">${esc(next.it.day)}${next.it.time ? ' · ' + esc(fmtTimeCell(next.it.time)) : ''}${next.it.detail ? ' · ' + esc(next.it.detail) : ''}</div>
+    // "עכשיו" נחשב פעיל רק אם עוד לא הגיע האירוע הבא (ובתוך חלון סביר של 4 שעות)
+    const nowActive = nowItem && (now - nowItem.t < 4 * 3600000) && (!nextItem || nextItem.t > now);
+    const started = timed[0].t <= now;   // הנופש התחיל
+    if (!started) { card.style.display = 'none'; return; }   // לפני הנופש — ספירה לאחור מספיקה
+
+    const eyebrow = card.querySelector('.eyebrow');
+    if (eyebrow) eyebrow.innerHTML = '📍 מה קורה עכשיו';
+    const rowHtml = (label, cls, o) => o ? `
+      <div class="live-row ${cls}">
+        <span class="live-tag">${label}</span>
+        <div class="live-body">
+          <div class="live-title">${typeIcon(o.it.type)} ${esc(o.it.title)}</div>
+          <div class="muted live-meta">${esc(o.it.day)}${o.it.time ? ' · ' + esc(fmtTimeCell(o.it.time)) : ''}${o.it.detail ? ' · ' + esc(o.it.detail) : ''}</div>
         </div>
-        <span class="chip coral" style="font-size:0.9rem;">${esc(relTime(next.dt.getTime() - now))}</span>
-      </div>`;
+        ${cls === 'next' ? `<span class="chip coral live-when">${esc(relTime(o.t - now))}</span>` : '<span class="live-pulse">●</span>'}
+      </div>` : '';
+
+    let html = '';
+    if (nowActive) html += rowHtml('עכשיו', 'now', nowItem);
+    html += rowHtml('הבא', 'next', nextItem);
+    if (!html) {
+      const last = timed[timed.length - 1];
+      html = `<div class="live-row"><div class="live-body"><div class="live-title">🎉 סיימנו את הנופש!</div><div class="muted live-meta">איזה יום היה לי סמואל</div></div></div>`;
+      if (last && now - last.t > 6 * 3600000) { /* אחרי הכל */ }
+    }
+    body.innerHTML = html;
     card.style.display = 'block';
   },
 
@@ -181,12 +217,16 @@ const App = {
   async loadSchedule() {
     const box = $('scheduleList');
     if (!CONFIGURED) { box.innerHTML = this.notConfiguredBanner() + Schedule.addBar() + emptyState('🗓️', 'הלו״ז יופיע כאן', 'זמין אחרי חיבור הגיליון'); return; }
-    box.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
+    // מטמון → הצגה מיידית; אחרת ספינר
+    const cached = App.state.schedule || Cache.get('schedule');
+    if (cached && cached.length) { App.state.schedule = cached; Schedule.render(); }
+    else box.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
     try {
       const res = await apiCall('getSchedule');
       App.state.schedule = (res.success && res.schedule) ? res.schedule : [];
+      Cache.set('schedule', App.state.schedule);
       Schedule.render();
-    } catch (e) { box.innerHTML = emptyState('😕', 'שגיאה בטעינת הלו״ז', e.message); }
+    } catch (e) { if (!(cached && cached.length)) box.innerHTML = emptyState('😕', 'שגיאה בטעינת הלו״ז', e.message); }
   },
 };
 
@@ -226,8 +266,7 @@ const Schedule = {
                     ${i.detail ? `<div class="tl-detail">${esc(i.detail)}</div>` : ''}
                   </div>
                   <div class="tl-actions">
-                    <button class="icon-btn-sm" onclick='Schedule.openEdit(${JSON.stringify(i).replace(/'/g, "&#39;")})' title="עריכה">✏️</button>
-                    <button class="icon-btn-sm" onclick="Schedule.remove('${i.id}')" title="מחיקה">🗑️</button>
+                    <button class="icon-btn-sm" onclick='Schedule.openEdit(${JSON.stringify(i).replace(/'/g, "&#39;")})' title="עריכה / מחיקה" aria-label="עריכה או מחיקה">✏️</button>
                   </div>
                 </div>
               </div>
@@ -252,7 +291,7 @@ const Schedule = {
       <div class="form-group"><label class="form-label">פירוט (לא חובה)</label>
         <textarea class="form-textarea" id="scDetail" placeholder="פרטים נוספים">${esc(item.detail || '')}</textarea></div>
       <div class="modal-footer">
-        ${item.id ? `<button class="btn btn-danger" onclick="Schedule.remove('${item.id}', true)">מחיקה</button>` : ''}
+        ${item.id ? `<button class="btn btn-danger" onclick="Schedule.remove('${item.id}')">מחיקה</button>` : ''}
         <button class="btn btn-primary btn-block" onclick="Schedule.save('${item.id || ''}')">שמירה</button>
       </div>`;
   },
@@ -270,14 +309,14 @@ const Schedule = {
       App.loadSchedule();
     } catch (e) { showToast(e.message, 'error'); }
   },
-  async remove(id, fromModal) {
-    if (!confirm('למחוק את האירוע מהלו״ז?')) return;
-    try {
-      const res = await apiCall('deleteSchedule', { id });
-      if (!res.success) throw new Error(res.message || 'שגיאה');
-      if (fromModal) Modal.hide();
-      showToast('נמחק', 'info'); App.loadSchedule();
-    } catch (e) { showToast(e.message, 'error'); }
+  remove(id) {
+    Modal.confirm('למחוק את האירוע מהלו״ז? אי אפשר לשחזר.', async () => {
+      try {
+        const res = await apiCall('deleteSchedule', { id });
+        if (!res.success) throw new Error(res.message || 'שגיאה');
+        showToast('נמחק', 'info'); App.loadSchedule();
+      } catch (e) { showToast(e.message, 'error'); }
+    }, { title: 'מחיקת אירוע', yes: 'מחק', danger: true });
   },
 };
 
@@ -342,14 +381,83 @@ const Profile = {
         <div class="avatar" style="width:76px;height:76px;font-size:2.4rem;margin:0 auto 10px;">${p.avatar}</div>
         <h3 style="font-family:var(--font-display);font-size:1.5rem;">${esc(p.name)}</h3>
         <div class="muted">${esc(p.family || '')}</div>
+        ${p.motto ? `<div class="profile-motto">״${esc(p.motto)}״</div>` : ''}
         <div class="chip gold mt-md">⭐ ${this.points} נקודות</div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary btn-block" onclick="Profile.confirmSwitch()">החלפת משתמש</button>
+      <div class="modal-footer" style="flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="Profile.openEdit()">✏️ עריכת פרופיל</button>
+        <button class="btn btn-secondary btn-sm" onclick="Profile.confirmSwitch()">🔄 החלפת משתמש</button>
         <button class="btn btn-primary btn-block" onclick="App.go('games');Modal.hide()">🎮 לצבור נקודות</button>
       </div>`;
   },
-  confirmSwitch() { this.clear(); this.open(); showToast('התנתקתם. בחרו או צרו פרופיל', 'info'); },
+  confirmSwitch() {
+    Modal.confirm('להתנתק מהפרופיל הזה ולבחור אחר? הנקודות נשמרות בענן.', () => {
+      this.clear(); this.open(); showToast('בחרו או צרו פרופיל', 'info');
+    }, { title: 'החלפת משתמש', yes: 'החלף' });
+  },
+
+  // ── עריכת פרופיל (שם / אווטאר / מוטו) ──
+  async openEdit() {
+    const p = this.get(); if (!p) return;
+    const used = await this.usedAvatars(p.avatar);
+    Modal.show(`
+      <div class="modal-header"><span class="modal-title">עריכת פרופיל</span>
+        <button class="modal-close" onclick="Modal.hide()">×</button></div>
+      <div class="form-group"><label class="form-label">שם</label>
+        <input class="form-input" id="epName" value="${esc(p.name)}" maxlength="24"></div>
+      <div class="form-group"><label class="form-label">משפחה (לא חובה)</label>
+        <input class="form-input" id="epFamily" value="${esc(p.family || '')}" maxlength="30"></div>
+      <div class="form-group"><label class="form-label">המוטו שלי (לא חובה)</label>
+        <input class="form-input" id="epMotto" value="${esc(p.motto || '')}" maxlength="60" placeholder="לדוגמה: קיץ = אושר ☀️"></div>
+      <div class="form-group"><label class="form-label">אווטאר</label>
+        ${this.avatarPickerHtml(p.avatar, used)}</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="Profile.open()">→ חזרה</button>
+        <button class="btn btn-primary btn-block" onclick="Profile.saveEdit()">שמירת שינויים</button>
+      </div>`);
+    this._avatar = p.avatar;
+  },
+  async saveEdit() {
+    const name = $('epName').value.trim();
+    const family = $('epFamily').value.trim();
+    const motto = $('epMotto').value.trim();
+    const avatar = this._avatar || this.get().avatar;
+    if (!name) { showToast('צריך שם 🙂', 'warning'); return; }
+    const p = this.get();
+    if (!CONFIGURED) { this.set({ ...p, name, family, avatar, motto }); Modal.hide(); showToast('נשמר', 'success'); return; }
+    const btn = event && event.target; if (btn) { btn.disabled = true; btn.textContent = 'שומר...'; }
+    try {
+      const res = await apiCall('updateUser', { id: p.id, name, family, avatar, motto });
+      if (!res.success) throw new Error(res.message || 'שגיאה');
+      this.set({ ...p, name, family, avatar, motto });
+      Modal.hide(); showToast('הפרופיל עודכן ✓', 'success'); playChime();
+      // רענון תצוגות שמושפעות מהשם/אווטאר
+      App.state.users = null;
+      if (App.loaded.has('games')) Games.refreshLeaderboard();
+      if (App.loaded.has('assign')) Assign.load();
+      if (App.loaded.has('wall')) Wall.load();
+    } catch (e) { showToast(e.message, 'error'); if (btn) { btn.disabled = false; btn.textContent = 'שמירת שינויים'; } }
+  },
+
+  // רשימת אווטארים שכבר תפוסים ע"י אחרים (למעט שלי)
+  async usedAvatars(mine) {
+    if (!CONFIGURED) return new Set();
+    try {
+      let users = App.state.users;
+      if (!users) { const res = await apiCall('getUsers'); users = (res.success && res.users) ? res.users : []; App.state.users = users; }
+      const s = new Set(users.map(u => u.avatar).filter(a => a && a !== mine));
+      return s;
+    } catch (e) { return new Set(); }
+  },
+  avatarPickerHtml(selected, used) {
+    used = used || new Set();
+    return `<div class="avatar-picker" id="npAvatars">
+      ${CONFIG.AVATARS.map(a => {
+        const taken = used.has(a) && a !== selected;
+        return `<button class="avatar-opt ${a === selected ? 'selected' : ''} ${taken ? 'taken' : ''}" data-a="${a}" title="${taken ? 'כבר בשימוש' : ''}" onclick="Profile.pick(this)">${a}</button>`;
+      }).join('')}
+    </div>`;
+  },
 
   // בורר: חדש / קיים
   viewChooser() {
@@ -369,22 +477,26 @@ const Profile = {
     if (which === 'new') { this.attachCreate(); } else { this.attachExisting(); }
   },
 
-  attachCreate() {
+  async attachCreate() {
     const avatars = CONFIG.AVATARS;
+    this._avatar = avatars[0];
     $('profileTabBody').innerHTML = `
       <div class="form-group"><label class="form-label">איך קוראים לכם?</label>
         <input class="form-input" id="npName" placeholder="לדוגמה: נעמה" maxlength="24"></div>
       <div class="form-group"><label class="form-label">איזו משפחה? (לא חובה)</label>
         <input class="form-input" id="npFamily" placeholder="לדוגמה: משפחת סמואל" maxlength="30"></div>
+      <div class="form-group"><label class="form-label">המוטו שלי (לא חובה)</label>
+        <input class="form-input" id="npMotto" placeholder="לדוגמה: קיץ = אושר ☀️" maxlength="60"></div>
       <div class="form-group"><label class="form-label">בחרו אווטאר</label>
-        <div class="avatar-picker" id="npAvatars">
-          ${avatars.map((a, i) => `<button class="avatar-opt ${i === 0 ? 'selected' : ''}" data-a="${a}" onclick="Profile.pick(this)">${a}</button>`).join('')}
-        </div></div>
+        <div id="npAvatarWrap">${this.avatarPickerHtml(avatars[0], new Set())}</div></div>
       <div class="form-group"><label class="form-label">קוד אישי (4 ספרות, לא חובה)</label>
         <input class="form-input" id="npPin" inputmode="numeric" maxlength="4" placeholder="להתחברות ממכשירים נוספים">
         <div class="form-hint">מגן שלא יצברו נקודות בשמכם. אפשר להשאיר ריק.</div></div>
       <div class="modal-footer"><button class="btn btn-primary btn-block" onclick="Profile.create()">יאללה, מתחילים 🎒</button></div>`;
-    this._avatar = avatars[0];
+    // סימון אווטארים תפוסים ברקע (לא חוסם את הטופס)
+    const used = await this.usedAvatars(avatars[0]);
+    const wrap = $('npAvatarWrap');
+    if (wrap) wrap.innerHTML = this.avatarPickerHtml(this._avatar, used);
   },
   pick(btn) {
     document.querySelectorAll('#npAvatars .avatar-opt').forEach(b => b.classList.remove('selected'));
@@ -394,20 +506,22 @@ const Profile = {
   async create() {
     const name = $('npName').value.trim();
     const family = $('npFamily').value.trim();
+    const motto = ($('npMotto') || {}).value ? $('npMotto').value.trim() : '';
     const pin = $('npPin').value.trim();
     const avatar = this._avatar || '🙂';
     if (!name) { showToast('צריך שם 🙂', 'warning'); return; }
     if (pin && !/^\d{4}$/.test(pin)) { showToast('הקוד צריך להיות 4 ספרות', 'warning'); return; }
     if (!CONFIGURED) { // מצב תצוגה מקדימה — פרופיל מקומי בלבד
-      this.set({ id: 'local-' + Date.now(), name, family, avatar });
+      this.set({ id: 'local-' + Date.now(), name, family, avatar, motto });
       Modal.hide(); showToast(`שלום ${name}! (מצב תצוגה מקדימה)`, 'success'); return;
     }
     const btn = event && event.target; if (btn) { btn.disabled = true; btn.textContent = 'יוצר...'; }
     try {
-      const res = await apiCall('createUser', { name, family, avatar, pin });
+      const res = await apiCall('createUser', { name, family, avatar, pin, motto });
       if (!res.success) throw new Error(res.message || 'שגיאה');
-      this.set({ id: res.user.id, name: res.user.name, family: res.user.family, avatar: res.user.avatar });
+      this.set({ id: res.user.id, name: res.user.name, family: res.user.family, avatar: res.user.avatar, motto: res.user.motto || motto });
       this.setPoints(0);
+      App.state.users = null;
       Modal.hide(); burstConfetti(80); playChime();
       showToast(`ברוכים הבאים, ${name}! 🎉`, 'success');
       App.loadSummary();
@@ -422,26 +536,33 @@ const Profile = {
       const res = await apiCall('getUsers');
       const users = (res.success && res.users) ? res.users : [];
       if (!users.length) { body.innerHTML = emptyState('🤷', 'אין עדיין משתמשים', 'צרו פרופיל חדש'); return; }
-      body.innerHTML = `<div class="grid" style="max-height:280px;overflow-y:auto;">
+      App.state.users = users;
+      body.innerHTML = `<div class="grid" style="max-height:300px;overflow-y:auto;">
         ${users.map(u => `
           <button class="check-row" style="text-align:start;" onclick='Profile.selectExisting(${JSON.stringify(u).replace(/'/g, "&#39;")})'>
             <span class="avatar">${u.avatar || '🙂'}</span>
-            <span class="cr-text">${esc(u.name)}<div class="lb-fam">${esc(u.family || '')}</div></span>
+            <span class="cr-text">${esc(u.name)}${u.hasPin ? ' 🔒' : ''}<div class="lb-fam">${esc(u.family || '')}${u.motto ? ' · ״' + esc(u.motto) + '״' : ''}</div></span>
             <span class="chip gold">⭐ ${u.points || 0}</span>
           </button>`).join('')}
       </div>`;
     } catch (e) { body.innerHTML = emptyState('😕', 'שגיאה', e.message); }
   },
-  async selectExisting(u) {
+  selectExisting(u) {
     if (u.hasPin) {
-      const pin = prompt(`קוד אישי של ${u.name}:`);
-      if (pin == null) return;
-      try {
-        const res = await apiCall('loginUser', { id: u.id, pin: pin.trim() });
-        if (!res.success) throw new Error(res.message || 'קוד שגוי');
-      } catch (e) { showToast(e.message, 'error'); return; }
+      Modal.prompt(`קוד אישי של ${u.name}`, async (pin) => {
+        if (!pin) return;
+        try {
+          const res = await apiCall('loginUser', { id: u.id, pin: pin });
+          if (!res.success) throw new Error(res.message || 'קוד שגוי');
+          this._finishSelect(u);
+        } catch (e) { showToast(e.message, 'error'); }
+      }, { numeric: true, maxlength: 4, placeholder: '4 ספרות', yes: 'כניסה' });
+      return;
     }
-    this.set({ id: u.id, name: u.name, family: u.family, avatar: u.avatar });
+    this._finishSelect(u);
+  },
+  _finishSelect(u) {
+    this.set({ id: u.id, name: u.name, family: u.family, avatar: u.avatar, motto: u.motto || '' });
     this.setPoints(u.points || 0);
     Modal.hide(); showToast(`שלום ${u.name}! 👋`, 'success'); App.loadSummary();
   },
@@ -462,12 +583,15 @@ const Assign = {
     this.renderTabs();
     const box = $('assignList');
     if (!CONFIGURED) { box.innerHTML = App.notConfiguredBanner() + emptyState('✋', 'ההשתבצויות יופיעו כאן', 'ערכו את גיליון assignments'); return; }
-    box.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
+    const cached = App.state.assignments || Cache.get('assignments');
+    if (cached && cached.length) { App.state.assignments = cached; this.render(); }
+    else box.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
     try {
       const res = await apiCall('getAssignments');
       App.state.assignments = (res.success && res.assignments) ? res.assignments : [];
+      Cache.set('assignments', App.state.assignments);
       this.render();
-    } catch (e) { box.innerHTML = emptyState('😕', 'שגיאה בטעינה', e.message); }
+    } catch (e) { if (!(cached && cached.length)) box.innerHTML = emptyState('😕', 'שגיאה בטעינה', e.message); }
   },
 
   renderTabs() {
@@ -517,21 +641,26 @@ const Assign = {
   async claim(id) {
     if (!Profile.requireUser()) return;
     const me = Profile.get();
+    // עדכון אופטימי — מציג מיד, מסתנכרן ברקע
+    const a = (App.state.assignments || []).find(x => x.id === id);
+    if (a) { a.claims = a.claims || []; if (!a.claims.some(c => c.userId === me.id)) a.claims.push({ userId: me.id, name: me.name, avatar: me.avatar, family: me.family || '' }); this.render(); }
+    showToast('נרשמת! תודה 🙌', 'success'); playChime();
     try {
       const res = await apiCall('claimAssignment', { assignmentId: id, userId: me.id, name: me.name, avatar: me.avatar, family: me.family || '' });
       if (!res.success) throw new Error(res.message || 'שגיאה');
-      showToast('נרשמת! תודה 🙌', 'success'); playChime();
       await this.load(); App.loadSummary();
-    } catch (e) { showToast(e.message, 'error'); }
+    } catch (e) { showToast(e.message, 'error'); await this.load(); }
   },
   async unclaim(id) {
     const me = Profile.get(); if (!me) return;
+    const a = (App.state.assignments || []).find(x => x.id === id);
+    if (a && a.claims) { a.claims = a.claims.filter(c => c.userId !== me.id); this.render(); }
+    showToast('השיבוץ בוטל', 'info');
     try {
       const res = await apiCall('unclaimAssignment', { assignmentId: id, userId: me.id });
       if (!res.success) throw new Error(res.message || 'שגיאה');
-      showToast('השיבוץ בוטל', 'info');
       await this.load(); App.loadSummary();
-    } catch (e) { showToast(e.message, 'error'); }
+    } catch (e) { showToast(e.message, 'error'); await this.load(); }
   },
 };
 
@@ -546,13 +675,15 @@ const Packing = {
   async load() {
     const box = $('packingList');
     if (!CONFIGURED) { box.innerHTML = App.notConfiguredBanner() + emptyState('🎒', 'רשימת הציוד תופיע כאן', 'ערכו את גיליון packing'); return; }
-    box.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
+    const cached = Cache.get('packing');
+    if (cached && cached.length) { this.items = cached; this.render(); }
+    else box.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
     try {
       const res = await apiCall('getPacking');
       const items = (res.success && res.packing) ? res.packing : [];
-      if (!items.length) { box.innerHTML = emptyState('🎒', 'אין עדיין פריטים', 'הוסיפו שורות בגיליון packing'); return; }
-      this.items = items; this.render();
-    } catch (e) { box.innerHTML = emptyState('😕', 'שגיאה', e.message); }
+      if (!items.length && !(cached && cached.length)) { box.innerHTML = emptyState('🎒', 'אין עדיין פריטים', 'הוסיפו שורות בגיליון packing'); return; }
+      this.items = items; Cache.set('packing', items); this.render();
+    } catch (e) { if (!(cached && cached.length)) box.innerHTML = emptyState('😕', 'שגיאה', e.message); }
   },
 
   render() {
@@ -589,42 +720,84 @@ const Packing = {
    ═══════════════════════════════════════════════════════════ */
 const Wall = {
   async load() {
+    const album = App.setting('photosUrl', CONFIG.GOOGLE_PHOTOS_URL || '');
     $('wallComposer').innerHTML = `
-      <div class="form-group"><textarea class="form-textarea" id="wallMsg" placeholder="מה בא לכם לשתף? טיפ, מחשבה, קישור לאלבום תמונות..." maxlength="600"></textarea></div>
+      ${album ? `<a class="btn btn-pine btn-block mb-md" href="${esc(album)}" target="_blank" rel="noopener">📸 אלבום התמונות המשותף</a>` : ''}
+      <div class="form-group"><textarea class="form-textarea" id="wallMsg" placeholder="מה בא לכם לשתף? טיפ, מחשבה, ברכה..." maxlength="600"></textarea></div>
+      <div id="wallImgWrap" style="display:none;" class="mb-md">
+        <input class="form-input" id="wallImg" placeholder="הדביקו קישור לתמונה (https://...)">
+      </div>
       <div class="row between wrap-gap">
-        <input class="form-input" id="wallImg" placeholder="קישור לתמונה (לא חובה)" style="flex:1;min-width:180px;">
+        <button class="btn btn-ghost btn-sm" id="wallImgToggle" onclick="Wall.toggleImg()">🖼️ הוספת תמונה מקישור</button>
         <button class="btn btn-primary" onclick="Wall.post()">📮 פרסום</button>
       </div>`;
     const feed = $('wallFeed');
     if (!CONFIGURED) { feed.innerHTML = App.notConfiguredBanner() + emptyState('📮', 'הקיר יופיע כאן', 'זמין אחרי חיבור הגיליון'); return; }
-    feed.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
+    const cached = Cache.get('posts');
+    if (cached && cached.length) feed.innerHTML = this.feedHtml(cached);
+    else feed.innerHTML = `<div class="center"><div class="spinner-sm" style="margin:20px auto;"></div></div>`;
     try {
-      const res = await apiCall('getPosts');
+      const me = Profile.get();
+      const res = await apiCall('getPosts', me ? { userId: me.id } : {});
       const posts = (res.success && res.posts) ? res.posts : [];
+      Cache.set('posts', posts);
+      this.posts = posts;
       if (!posts.length) { feed.innerHTML = emptyState('📮', 'הקיר ריק — היו הראשונים!', ''); return; }
-      feed.innerHTML = posts.map(p => `
-        <div class="wall-note">
-          ${p.imageUrl ? `<img src="${esc(p.imageUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
-          <div class="wall-msg">${esc(p.message)}</div>
-          <div class="wall-foot">
-            <span class="avatar">${p.avatar || '🙂'}</span>
-            <span class="wall-author">${esc(p.name)}</span>
-            <span class="wall-time">${timeAgo(p.ts)}</span>
-          </div>
-        </div>`).join('');
-    } catch (e) { feed.innerHTML = emptyState('😕', 'שגיאה', e.message); }
+      feed.innerHTML = this.feedHtml(posts);
+    } catch (e) { if (!(cached && cached.length)) feed.innerHTML = emptyState('😕', 'שגיאה', e.message); }
+  },
+
+  feedHtml(posts) {
+    return posts.map(p => `
+      <div class="wall-note">
+        ${p.imageUrl ? `<img src="${esc(p.imageUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+        <div class="wall-msg">${esc(p.message)}</div>
+        <div class="wall-foot">
+          <span class="avatar">${p.avatar || '🙂'}</span>
+          <span class="wall-author">${esc(p.name)}</span>
+          <button class="like-btn ${p.likedByMe ? 'liked' : ''}" onclick="Wall.like('${p.id}', this)" aria-label="לייק">
+            <span class="like-ic">${p.likedByMe ? '❤️' : '🤍'}</span><span class="like-count">${p.likes || 0}</span>
+          </button>
+          <span class="wall-time">${timeAgo(p.ts)}</span>
+        </div>
+      </div>`).join('');
+  },
+
+  toggleImg() {
+    const wrap = $('wallImgWrap'), btn = $('wallImgToggle');
+    const show = wrap.style.display === 'none';
+    wrap.style.display = show ? 'block' : 'none';
+    btn.textContent = show ? '✖️ בלי תמונה' : '🖼️ הוספת תמונה מקישור';
+  },
+
+  async like(postId, btn) {
+    if (!Profile.requireUser()) return;
+    const me = Profile.get();
+    // עדכון אופטימי
+    const ic = btn.querySelector('.like-ic'), cnt = btn.querySelector('.like-count');
+    const wasLiked = btn.classList.contains('liked');
+    btn.classList.toggle('liked', !wasLiked);
+    ic.textContent = wasLiked ? '🤍' : '❤️';
+    cnt.textContent = Math.max(0, (parseInt(cnt.textContent) || 0) + (wasLiked ? -1 : 1));
+    if (!wasLiked) btn.classList.add('pop');
+    setTimeout(() => btn.classList.remove('pop'), 300);
+    try {
+      const res = await apiCall('likePost', { postId, userId: me.id });
+      if (res.success) { cnt.textContent = res.count; btn.classList.toggle('liked', res.liked); ic.textContent = res.liked ? '❤️' : '🤍'; }
+    } catch (e) { /* שקט — האופטימי כבר עדכן */ }
   },
 
   async post() {
     if (!Profile.requireUser()) return;
     const msg = $('wallMsg').value.trim();
-    const img = $('wallImg').value.trim();
-    if (!msg && !img) { showToast('כתבו משהו או הוסיפו קישור', 'warning'); return; }
+    const imgEl = $('wallImg');
+    const img = (imgEl && $('wallImgWrap').style.display !== 'none') ? imgEl.value.trim() : '';
+    if (!msg && !img) { showToast('כתבו משהו לשיתוף', 'warning'); return; }
     const me = Profile.get();
     try {
       const res = await apiCall('addPost', { userId: me.id, name: me.name, avatar: me.avatar, family: me.family || '', message: msg, imageUrl: img });
       if (!res.success) throw new Error(res.message || 'שגיאה');
-      $('wallMsg').value = ''; $('wallImg').value = '';
+      $('wallMsg').value = ''; if (imgEl) imgEl.value = '';
       showToast('פורסם! 🎉', 'success'); playChime();
       this.load(); App.loadSummary();
     } catch (e) { showToast(e.message, 'error'); }
@@ -637,6 +810,37 @@ const Wall = {
 const Modal = {
   show(html) { $('modalBox').innerHTML = html; $('modalBackdrop').classList.add('open'); },
   hide() { $('modalBackdrop').classList.remove('open'); },
+
+  // אישור מעוצב (מחליף confirm של הדפדפן)
+  confirm(message, onYes, opts = {}) {
+    this._onYes = onYes;
+    this.show(`
+      <div class="modal-header"><span class="modal-title">${esc(opts.title || 'רגע, לוודא')}</span>
+        <button class="modal-close" onclick="Modal.hide()">×</button></div>
+      <p style="color:var(--text-secondary);line-height:1.6;">${esc(message)}</p>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-block" onclick="Modal.hide()">ביטול</button>
+        <button class="btn ${opts.danger ? 'btn-danger' : 'btn-primary'} btn-block" onclick="Modal._yes()">${esc(opts.yes || 'אישור')}</button>
+      </div>`);
+  },
+  _yes() { const f = this._onYes; this._onYes = null; this.hide(); if (f) f(); },
+
+  // קלט מעוצב (מחליף prompt של הדפדפן)
+  prompt(title, onSubmit, opts = {}) {
+    this._onSubmit = onSubmit;
+    this.show(`
+      <div class="modal-header"><span class="modal-title">${esc(title)}</span>
+        <button class="modal-close" onclick="Modal.hide()">×</button></div>
+      <div class="form-group">
+        <input class="form-input" id="modalPromptInput" ${opts.numeric ? 'inputmode="numeric"' : ''} ${opts.maxlength ? `maxlength="${opts.maxlength}"` : ''} placeholder="${esc(opts.placeholder || '')}" onkeydown="if(event.key==='Enter')Modal._submit()">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-block" onclick="Modal.hide()">ביטול</button>
+        <button class="btn btn-primary btn-block" onclick="Modal._submit()">${esc(opts.yes || 'אישור')}</button>
+      </div>`);
+    setTimeout(() => { const el = $('modalPromptInput'); if (el) el.focus(); }, 60);
+  },
+  _submit() { const f = this._onSubmit; const v = ($('modalPromptInput') || {}).value || ''; this._onSubmit = null; this.hide(); if (f) f(v.trim()); },
 };
 
 /* ── עוזרי תצוגה ── */

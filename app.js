@@ -400,6 +400,9 @@ const Profile = {
   async openEdit() {
     const p = this.get(); if (!p) return;
     const used = await this.usedAvatars(p.avatar);
+    // האם כבר יש קוד? (מ-getUsers שנשמר במטמון)
+    const meRec = (App.state.users || []).find(u => String(u.id) === String(p.id));
+    const hasPin = meRec ? !!meRec.hasPin : false;
     Modal.show(`
       <div class="modal-header"><span class="modal-title">עריכת פרופיל</span>
         <button class="modal-close" onclick="Modal.hide()">×</button></div>
@@ -409,6 +412,9 @@ const Profile = {
         <input class="form-input" id="epFamily" value="${esc(p.family || '')}" maxlength="30"></div>
       <div class="form-group"><label class="form-label">המוטו שלי (לא חובה)</label>
         <input class="form-input" id="epMotto" value="${esc(p.motto || '')}" maxlength="60" placeholder="לדוגמה: קיץ = אושר ☀️"></div>
+      <div class="form-group"><label class="form-label">${hasPin ? 'שינוי קוד כניסה' : 'הוספת קוד כניסה (לא חובה)'}</label>
+        <input class="form-input" id="epPin" inputmode="numeric" maxlength="4" placeholder="${hasPin ? 'הקלידו קוד חדש (או השאירו ריק)' : '4 ספרות — לכניסה ממכשיר אחר'}">
+        <div class="form-hint">${hasPin ? 'יש לכם כבר קוד. השאירו ריק כדי לא לשנות.' : 'הקוד מגן שרק אתם תתחברו לפרופיל ממכשירים נוספים.'}</div></div>
       <div class="form-group"><label class="form-label">אווטאר</label>
         ${this.avatarPickerHtml(p.avatar, used)}</div>
       <div class="modal-footer">
@@ -421,15 +427,18 @@ const Profile = {
     const name = $('epName').value.trim();
     const family = $('epFamily').value.trim();
     const motto = $('epMotto').value.trim();
+    const pin = ($('epPin') || {}).value ? $('epPin').value.trim() : '';
     const avatar = this._avatar || this.get().avatar;
     if (!name) { showToast('צריך שם 🙂', 'warning'); return; }
+    if (pin && !/^\d{4}$/.test(pin)) { showToast('הקוד צריך להיות 4 ספרות', 'warning'); return; }
     const p = this.get();
     if (!CONFIGURED) { this.set({ ...p, name, family, avatar, motto }); Modal.hide(); showToast('נשמר', 'success'); return; }
     const btn = event && event.target; if (btn) { btn.disabled = true; btn.textContent = 'שומר...'; }
     try {
-      const res = await apiCall('updateUser', { id: p.id, name, family, avatar, motto });
+      const res = await apiCall('updateUser', { id: p.id, name, family, avatar, motto, pin });
       if (!res.success) throw new Error(res.message || 'שגיאה');
       this.set({ ...p, name, family, avatar, motto });
+      if (pin && App.state.users) { const r = App.state.users.find(u => String(u.id) === String(p.id)); if (r) r.hasPin = true; }
       Modal.hide(); showToast('הפרופיל עודכן ✓', 'success'); playChime();
       // רענון תצוגות שמושפעות מהשם/אווטאר
       App.state.users = null;

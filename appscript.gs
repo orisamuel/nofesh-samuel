@@ -177,6 +177,28 @@ const QUIZ_SEED = [
   ['q20', 'טריוויה', 'אבן מנחם נמצאת ליד איזו עיר?', 'מעלות-תרשיחא', 'טבריה', 'אשקלון', 'ירושלים', 1, 'כן'],
   ['q21', 'טריוויה', 'מה מתוכנן לערב יום שני?', 'פעילות ערב', 'חוזרים הביתה', 'מגיעים לכינרת', 'ארוחת בוקר', 1, 'כן'],
   ['q22', 'טריוויה', 'מתי חוזרים הביתה מהנופש?', 'יום שלישי', 'יום ראשון', 'יום שני', 'יום רביעי', 1, 'כן'],
+  // ── שאלות משפחתיות (מאורי) ──
+  ['q23', 'משפחת סמואל', 'מי היה בחוג ג׳ודו?', 'נבו ועמיחי', 'ינון', 'נבו', 'עמיחי', 1, 'כן'],
+  ['q24', 'משפחת סמואל', 'באיזו שנה הוקמה אבן מנחם?', '1960', '1889', '1982', '1961', 1, 'כן'],
+  ['q25', 'משפחת סמואל', 'כמה מטרים מעל פני הים נמצאת אבן מנחם?', '125', '620', '650', '431', 2, 'כן'],
+  ['q26', 'משפחת סמואל', 'לכמה מבני המשפחה יש שם שמסתיים באות י׳?', '6', '9', '11', '8', 2, 'כן'],
+  ['q27', 'משפחת סמואל', 'מי מהבאות לא למדה ברעיה?', 'רבקה', 'הודיה', 'תחיה', 'רני', 2, 'כן'],
+  // ── שאלות קיץ/נופש (כלליות וכיפיות) ──
+  ['q28', 'טריוויה', 'מה העונה שבה מתקיים נופש סמואל?', 'קיץ ☀️', 'חורף', 'אביב', 'סתיו', 1, 'כן'],
+  ['q29', 'טריוויה', 'איזה אגם מבקרים בו ביום הראשון של הנופש?', 'הכינרת', 'ים המלח', 'ים סוף', 'הים התיכון', 1, 'כן'],
+  ['q30', 'טריוויה', 'כמה לילות ישֵנים בנופש?', '3', '2', '1', '5', 2, 'כן'],
+  ['q31', 'טריוויה', 'מה מספר החירום של המשטרה בישראל?', '102', '100', '101', '106', 2, 'כן'],
+  ['q32', 'טריוויה', 'מה מספר החירום של מד״א (אמבולנס)?', '101', '100', '102', '104', 1, 'כן'],
+  ['q33', 'טריוויה', 'איזה פרי קיץ אדום ומתוק כולם אוהבים?', 'בננה', 'ענבים', 'אבטיח 🍉', 'תפוח', 3, 'כן'],
+  ['q34', 'טריוויה', 'מה חשוב למרוח על העור לפני יום בשמש?', 'קרם הגנה', 'חמאה', 'דבש', 'קטשופ', 1, 'כן'],
+  ['q35', 'טריוויה', 'מה הכי חשוב לשתות הרבה ביום חם?', 'מים 💧', 'קפה', 'שוקו חם', 'מרק', 1, 'כן'],
+  ['q36', 'טריוויה', 'איזה חרק מזמזם ומעצבן בערבי קיץ?', 'פרפר', 'יתוש', 'נמלה', 'דבורה', 2, 'כן'],
+  ['q37', 'טריוויה', 'מה קולים על האש במנגל?', 'גלידה', 'אבטיח', 'נקניקיות', 'פופקורן', 3, 'כן'],
+  ['q38', 'נופש סמואל', 'איזה משחק זיכרון יש באתר הנופש?', 'שחמט', 'זיכרון (זוגות)', 'מונופול', 'דמקה', 2, 'כן'],
+  ['q39', 'נופש סמואל', 'מה קורה למי שצובר הכי הרבה נקודות?', 'עולה לראש טבלת המובילים', 'מקבל מיליון', 'הולך הביתה', 'מפסיד', 1, 'כן'],
+  ['q40', 'טריוויה', 'מה הכי כיף לעשות בבריכה ביום חם?', 'לגהץ', 'לקפוץ למים', 'לשטוף כלים', 'לפתור מבחן', 2, 'כן'],
+  ['q41', 'נופש סמואל', 'מה צבע השמש בלוגו של נופש סמואל?', 'כחול', 'ירוק', 'כתום-אדום 🌅', 'סגול', 3, 'כן'],
+  ['q42', 'נופש סמואל', 'מה שם האתר של המשפחה?', 'נופש סמואל', 'חופש גדול', 'קיץ 2026', 'משפחת כהן', 1, 'כן'],
 ];
 
 // השלמת מאגר החידון: מוסיף כל שאלה מ-QUIZ_SEED שעדיין לא קיימת בגיליון (לפי id).
@@ -271,13 +293,15 @@ function updateUser(p) {
     const family = (p.family !== undefined) ? String(p.family).trim() : null;
     const avatar = (p.avatar !== undefined) ? String(p.avatar).trim() : null;
     const motto  = (p.motto  !== undefined) ? String(p.motto).trim()  : null;
+    const pin    = (p.pin    !== undefined) ? String(p.pin).trim()    : null;
     if (name !== null) { if (!name) return { success: false, message: 'צריך שם' }; sheet.getRange(row, 2).setValue(name); }
     if (family !== null) sheet.getRange(row, 3).setValue(family);
     if (avatar !== null) sheet.getRange(row, 4).setValue(avatar || '🙂');
     if (motto  !== null) sheet.getRange(row, 8).setValue(motto);
+    if (pin) sheet.getRange(row, 5).setValue(pin); // הגדרה/שינוי קוד (ריק = ללא שינוי)
     cascadeUserDisplay(p.id, name, avatar, family);
     const u = getObjects('users', USERS_H).find(x => String(x.id) === String(p.id));
-    return { success: true, user: { id: u.id, name: u.name, family: u.family, avatar: u.avatar, motto: u.motto || '' } };
+    return { success: true, user: { id: u.id, name: u.name, family: u.family, avatar: u.avatar, motto: u.motto || '', hasPin: !!String(u.pin || '').trim() } };
   } catch (e) { Logger.log('updateUser ' + e); return { success: false, message: e.toString() }; }
 }
 
@@ -734,7 +758,7 @@ function doPost(e) {
       // משתמשים
       case 'getUsers':    return jsonResponse(getUsers());
       case 'createUser':  return jsonResponse(createUser({ name: p.name, family: p.family, avatar: p.avatar, pin: p.pin, motto: p.motto }));
-      case 'updateUser':  return jsonResponse(updateUser({ id: p.id, name: p.name, family: p.family, avatar: p.avatar, motto: p.motto }));
+      case 'updateUser':  return jsonResponse(updateUser({ id: p.id, name: p.name, family: p.family, avatar: p.avatar, motto: p.motto, pin: p.pin }));
       case 'loginUser':   return jsonResponse(loginUser(p.id, p.pin));
 
       // השתבצויות
